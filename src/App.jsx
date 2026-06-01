@@ -637,6 +637,11 @@ function WeightPage({ weightHistory, setWeightHistory }) {
   const [filter, setFilter] = useState("30");
   const todayKey = today();
   const todayEntry = weightHistory.find(e => e.date === todayKey);
+  useEffect(() => {
+  if (todayEntry) {
+    setWeightInput(String(todayEntry.weight));
+  }
+}, [todayEntry]);
   const sorted = [...weightHistory].sort((a,b) => a.date.localeCompare(b.date));
 
   const last = sorted.length ? sorted[sorted.length-1] : null;
