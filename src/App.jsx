@@ -1139,118 +1139,500 @@ function WorkoutsPage({ workouts, setWorkouts }) {
 function WeightPage({ weightHistory, setWeightHistory }) {
   const [weightInput, setWeightInput] = useState("");
   const [filter, setFilter] = useState("30");
+
   const todayKey = today();
   const todayEntry = weightHistory.find(e => e.date === todayKey);
-  const sorted = [...weightHistory].sort((a,b) => a.date.localeCompare(b.date));
-  const last = sorted.length ? sorted[sorted.length-1] : null;
-  const prev = sorted.length > 1 ? sorted[sorted.length-2] : null;
-  const diff = last && prev ? parseFloat((last.weight - prev.weight).toFixed(1)) : null;
+
+  const sorted = [...weightHistory].sort((a, b) => a.date.localeCompare(b.date));
+
+  const last = sorted.length ? sorted[sorted.length - 1] : null;
 
   function saveWeight() {
     const w = parseFloat(weightInput);
     if (!w || w < 20 || w > 400) return;
+
     setWeightHistory(prev => {
       const filtered = prev.filter(e => e.date !== todayKey);
-      return [...filtered, { id:uid(), date:todayKey, weight:w }].sort((a,b)=>a.date.localeCompare(b.date));
+      return [...filtered, { id: uid(), date: todayKey, weight: w }].sort((a, b) =>
+        a.date.localeCompare(b.date)
+      );
     });
+
     setWeightInput("");
   }
-  function deleteEntry(id) { setWeightHistory(p => p.filter(e=>e.id!==id)); }
+
+  function deleteEntry(id) {
+    setWeightHistory(p => p.filter(e => e.id !== id));
+  }
 
   const now = new Date();
+
   const filtered = sorted.filter(e => {
     const d = new Date(e.date);
-    const days = (now-d)/(1000*60*60*24);
-    if (filter==="7") return days<=7;
-    if (filter==="30") return days<=30;
+    const days = (now - d) / (1000 * 60 * 60 * 24);
+
+    if (filter === "7") return days <= 7;
+    if (filter === "30") return days <= 30;
+
     return true;
   });
 
-  const chartW = 320, chartH = 160, padX = 40, padY = 20;
-  const innerW = chartW - padX*2, innerH = chartH - padY*2;
-  let path = "", points = [];
-  if (filtered.length > 1) {
-    const min = Math.min(...filtered.map(e=>e.weight)) - 0.5;
-    const max = Math.max(...filtered.map(e=>e.weight)) + 0.5;
+  // ─────────────────────────────────────────────
+  // СРЕДНИЙ ВЕС ЗА 7 ДНЕЙ
+  // ─────────────────────────────────────────────
+
+  const currentWeekEntries = sorted.filter(e => {
+    const days = (now - new Date(e.date)) / (1000 * 60 * 60 * 24);
+    return days <= 7;
+  });
+
+  const previousWeekEntries = sorted.filter(e => {
+    const days = (now - new Date(e.date)) / (1000 * 60 * 60 * 24);
+    return days > 7 && days <= 14;
+  });
+
+  const currentWeekAvg =
+    currentWeekEntries.length > 0
+      ? currentWeekEntries.reduce((s, e) => s + e.weight, 0) /
+        currentWeekEntries.length
+      : null;
+
+  const previousWeekAvg =
+    previousWeekEntries.length > 0
+      ? previousWeekEntries.reduce((s, e) => s + e.weight, 0) /
+        previousWeekEntries.length
+      : null;
+
+  const weeklyDiff =
+    currentWeekAvg !== null && previousWeekAvg !== null
+      ? parseFloat((currentWeekAvg - previousWeekAvg).toFixed(1))
+      : null;
+
+  const trend =
+    weeklyDiff === null
+      ? { label: "—", color: "var(--text2)" }
+      : weeklyDiff < -0.1
+      ? { label: "Снижение ↓", color: "var(--green)" }
+      : weeklyDiff > 0.1
+      ? { label: "Набор ↑", color: "var(--red)" }
+      : { label: "Стабильно →", color: "var(--amber)" };
+
+  // ─────────────────────────────────────────────
+  // ГРАФИК
+  // ─────────────────────────────────────────────
+
+  const chartW = 320;
+  const chartH = 160;
+  const padX = 40;
+  const padY = 20;
+
+  const innerW = chartW - padX * 2;
+  const innerH = chartH - padY * 2;
+
+  let path = "";
+  let points = [];
+
+  if (filtered.length > 0) {
+    const min = Math.min(...filtered.map(e => e.weight)) - 0.5;
+    const max = Math.max(...filtered.map(e => e.weight)) + 0.5;
     const range = max - min || 1;
-    const dates = filtered.map(e => new Date(e.date).getTime());
-    const minD = Math.min(...dates), maxD = Math.max(...dates);
-    const dateRange = maxD - minD || 1;
-    points = filtered.map(e => {
-      const x = padX + ((new Date(e.date).getTime()-minD)/dateRange)*innerW;
-      const y = padY + innerH - ((e.weight-min)/range)*innerH;
-      return { x, y, w: e.weight, date: e.date };
-    });
-    path = points.map((p,i) => `${i===0?"M":"L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+
+    if (filtered.length === 1) {
+      const entry = filtered[0];
+
+      points = [
+        {
+          x: chartW / 2,
+          y: padY + innerH / 2,
+          w: entry.weight,
+          date: entry.date,
+        },
+      ];
+
+      path = `M${points[0].x},${points[0].y}`;
+    } else {
+      const dates = filtered.map(e => new Date(e.date).getTime());
+
+      const minD = Math.min(...dates);
+      const maxD = Math.max(...dates);
+      const dateRange = maxD - minD || 1;
+
+      points = filtered.map(e => {
+        const x =
+          padX +
+          ((new Date(e.date).getTime() - minD) / dateRange) * innerW;
+
+        const y =
+          padY +
+          innerH -
+          ((e.weight - min) / range) * innerH;
+
+        return {
+          x,
+          y,
+          w: e.weight,
+          date: e.date,
+        };
+      });
+
+      path = points
+        .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+        .join(" ");
+    }
   }
 
-  const trend = diff === null ? { label:"—", color:"var(--text2)" } : diff < -0.1 ? { label:"Снижение ↓", color:"var(--green)" } : diff > 0.1 ? { label:"Набор ↑", color:"var(--red)" } : { label:"Стабильно →", color:"var(--amber)" };
-
   return (
-    <div className="fade-in" style={{ padding:"0 0 100px" }}>
-      <div style={{ padding:"20px 20px 0" }}>
-        <h1 style={{ fontSize:24, fontWeight:700 }}>Вес</h1>
-        <p style={{ color:"var(--text2)", fontSize:14, marginTop:2 }}>История и прогресс</p>
+    <div className="fade-in" style={{ padding: "0 0 100px" }}>
+      <div style={{ padding: "20px 20px 0" }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700 }}>Вес</h1>
+        <p style={{ color: "var(--text2)", fontSize: 14, marginTop: 2 }}>
+          История и прогресс
+        </p>
       </div>
-      <div style={{ padding:"16px 20px 0", display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
-        <div style={{ background:"var(--card)", borderRadius:12, padding:"12px", border:"1px solid var(--border)", textAlign:"center" }}>
-          <p style={{ color:"var(--text3)", fontSize:11, fontWeight:600, marginBottom:4 }}>ТЕКУЩИЙ</p>
-          <p style={{ fontWeight:700, fontSize:20 }}>{last?.weight || "—"}</p>
-          <p style={{ color:"var(--text3)", fontSize:12 }}>кг</p>
+
+      <div
+        style={{
+          padding: "16px 20px 0",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 10,
+        }}
+      >
+        <div
+          style={{
+            background: "var(--card)",
+            borderRadius: 12,
+            padding: "12px",
+            border: "1px solid var(--border)",
+            textAlign: "center",
+          }}
+        >
+          <p
+            style={{
+              color: "var(--text3)",
+              fontSize: 11,
+              fontWeight: 600,
+              marginBottom: 4,
+            }}
+          >
+            ТЕКУЩИЙ
+          </p>
+          <p style={{ fontWeight: 700, fontSize: 20 }}>
+            {last?.weight ?? "—"}
+          </p>
+          <p style={{ color: "var(--text3)", fontSize: 12 }}>кг</p>
         </div>
-        <div style={{ background:"var(--card)", borderRadius:12, padding:"12px", border:"1px solid var(--border)", textAlign:"center" }}>
-          <p style={{ color:"var(--text3)", fontSize:11, fontWeight:600, marginBottom:4 }}>ИЗМЕНЕНИЕ</p>
-          <p style={{ fontWeight:700, fontSize:20, color: diff===null?"var(--text)":diff<0?"var(--green)":diff>0?"var(--red)":"var(--amber)" }}>{diff===null?"—":diff>0?`+${diff}`:diff}</p>
-          <p style={{ color:"var(--text3)", fontSize:12 }}>кг</p>
+
+        <div
+          style={{
+            background: "var(--card)",
+            borderRadius: 12,
+            padding: "12px",
+            border: "1px solid var(--border)",
+            textAlign: "center",
+          }}
+        >
+          <p
+            style={{
+              color: "var(--text3)",
+              fontSize: 11,
+              fontWeight: 600,
+              marginBottom: 4,
+            }}
+          >
+            СРЕДНИЙ ЗА 7 ДНЕЙ
+          </p>
+
+          <p style={{ fontWeight: 700, fontSize: 20 }}>
+            {currentWeekAvg === null ? "—" : currentWeekAvg.toFixed(1)}
+          </p>
+
+          <p style={{ color: "var(--text3)", fontSize: 12 }}>кг</p>
         </div>
-        <div style={{ background:"var(--card)", borderRadius:12, padding:"12px", border:"1px solid var(--border)", textAlign:"center" }}>
-          <p style={{ color:"var(--text3)", fontSize:11, fontWeight:600, marginBottom:6 }}>ТРЕНД</p>
-          <p style={{ fontWeight:600, fontSize:13, color:trend.color }}>{trend.label}</p>
+
+        <div
+          style={{
+            background: "var(--card)",
+            borderRadius: 12,
+            padding: "12px",
+            border: "1px solid var(--border)",
+            textAlign: "center",
+          }}
+        >
+          <p
+            style={{
+              color: "var(--text3)",
+              fontSize: 11,
+              fontWeight: 600,
+              marginBottom: 4,
+            }}
+          >
+            ИЗМЕНЕНИЕ
+          </p>
+
+          <p
+            style={{
+              fontWeight: 700,
+              fontSize: 20,
+              color:
+                weeklyDiff === null
+                  ? "var(--text)"
+                  : weeklyDiff < -0.1
+                  ? "var(--green)"
+                  : weeklyDiff > 0.1
+                  ? "var(--red)"
+                  : "var(--amber)",
+            }}
+          >
+            {weeklyDiff === null
+              ? "—"
+              : weeklyDiff > 0
+              ? `+${weeklyDiff}`
+              : weeklyDiff}
+          </p>
+
+          <p
+            style={{
+              fontSize: 12,
+              color: trend.color,
+              marginTop: 2,
+            }}
+          >
+            {trend.label}
+          </p>
         </div>
       </div>
-      <div style={{ margin:"12px 20px 0", background:"var(--card)", borderRadius:"var(--radius)", padding:"16px", border:"1px solid var(--border)" }}>
-        <p style={{ fontWeight:600, fontSize:14, marginBottom:10 }}>{todayEntry ? "✏️ Обновить вес" : "➕ Записать вес"}</p>
-        {todayEntry && <p style={{ color:"var(--text2)", fontSize:13, marginBottom:10 }}>Сегодня: <strong>{todayEntry.weight} кг</strong></p>}
-        <div style={{ display:"flex", gap:10 }}>
-          <input type="number" value={weightInput} onChange={e=>setWeightInput(e.target.value)} placeholder="95.4" style={{ flex:1 }} step="0.1" min="20" max="400"/>
-          <Btn onClick={saveWeight} style={{ flexShrink:0 }}>Сохранить</Btn>
+
+      <div
+        style={{
+          margin: "12px 20px 0",
+          background: "var(--card)",
+          borderRadius: "var(--radius)",
+          padding: "16px",
+          border: "1px solid var(--border)",
+        }}
+      >
+        <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 10 }}>
+          {todayEntry ? "✏️ Обновить вес" : "➕ Записать вес"}
+        </p>
+
+        {todayEntry && (
+          <p
+            style={{
+              color: "var(--text2)",
+              fontSize: 13,
+              marginBottom: 10,
+            }}
+          >
+            Сегодня: <strong>{todayEntry.weight} кг</strong>
+          </p>
+        )}
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <input
+            type="number"
+            value={weightInput}
+            onChange={e => setWeightInput(e.target.value)}
+            placeholder="95.4"
+            style={{ flex: 1 }}
+            step="0.1"
+            min="20"
+            max="400"
+          />
+
+          <Btn onClick={saveWeight} style={{ flexShrink: 0 }}>
+            Сохранить
+          </Btn>
         </div>
       </div>
-      {filtered.length > 1 && (
-        <div style={{ margin:"12px 20px 0", background:"var(--card)", borderRadius:"var(--radius)", padding:"16px", border:"1px solid var(--border)" }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
-            <p style={{ fontWeight:600, fontSize:14 }}>График</p>
-            <div style={{ display:"flex", gap:6 }}>
-              {[["7","7 дней"],["30","30 дней"],["all","Всё"]].map(([v,l]) => (
-                <button key={v} onClick={()=>setFilter(v)} style={{ background:filter===v?"linear-gradient(135deg, var(--accent), #9b8ff8)":"var(--bg3)", border:"none", borderRadius:6, padding:"4px 10px", color:filter===v?"#fff":"var(--text2)", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.2s ease" }}>{l}</button>
-              ))}
-            </div>
+
+      <div
+        style={{
+          margin: "12px 20px 0",
+          background: "var(--card)",
+          borderRadius: "var(--radius)",
+          padding: "16px",
+          border: "1px solid var(--border)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 12,
+          }}
+        >
+          <p style={{ fontWeight: 600, fontSize: 14 }}>График</p>
+
+          <div style={{ display: "flex", gap: 6 }}>
+            {[["7", "7 дней"], ["30", "30 дней"], ["all", "Всё"]].map(
+              ([v, l]) => (
+                <button
+                  key={v}
+                  onClick={() => setFilter(v)}
+                  style={{
+                    background:
+                      filter === v
+                        ? "linear-gradient(135deg, var(--accent), #9b8ff8)"
+                        : "var(--bg3)",
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "4px 10px",
+                    color: filter === v ? "#fff" : "var(--text2)",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  {l}
+                </button>
+              )
+            )}
           </div>
-          <div style={{ overflowX:"auto" }} className="scroll-hide">
-            <svg width={chartW} height={chartH} viewBox={`0 0 ${chartW} ${chartH}`} style={{ display:"block", margin:"0 auto" }}>
-              {[0,1,2,3,4].map(i => <line key={i} x1={padX} x2={chartW-padX} y1={padY+(innerH/4)*i} y2={padY+(innerH/4)*i} stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>)}
-              <path d={path} fill="none" stroke="url(#lineGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <defs><linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="var(--accent)"/><stop offset="100%" stopColor="var(--accent2)"/></linearGradient></defs>
-              {points.length > 1 && <path d={`${path} L${points[points.length-1].x},${padY+innerH} L${points[0].x},${padY+innerH} Z`} fill="rgba(124,106,245,0.07)"/>}
-              {points.map((p,i) => <circle key={i} cx={p.x} cy={p.y} r="4" fill="var(--accent)" stroke="var(--bg2)" strokeWidth="2"/>)}
-            </svg>
-          </div>
         </div>
-      )}
-      <div style={{ padding:"16px 20px 0" }}>
-        <p style={{ fontWeight:600, fontSize:14, color:"var(--text2)", marginBottom:12 }}>ИСТОРИЯ</p>
-        <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+
+        <div style={{ overflowX: "auto" }} className="scroll-hide">
+          <svg
+            width={chartW}
+            height={chartH}
+            viewBox={`0 0 ${chartW} ${chartH}`}
+            style={{ display: "block", margin: "0 auto" }}
+          >
+            {[0, 1, 2, 3, 4].map(i => (
+              <line
+                key={i}
+                x1={padX}
+                x2={chartW - padX}
+                y1={padY + (innerH / 4) * i}
+                y2={padY + (innerH / 4) * i}
+                stroke="rgba(255,255,255,0.04)"
+                strokeWidth="1"
+              />
+            ))}
+
+            {points.length > 1 && (
+              <>
+                <path
+                  d={`${path} L${points[points.length - 1].x},${padY + innerH} L${points[0].x},${padY + innerH} Z`}
+                  fill="rgba(124,106,245,0.07)"
+                />
+
+                <path
+                  d={path}
+                  fill="none"
+                  stroke="url(#lineGrad)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </>
+            )}
+
+            <defs>
+              <linearGradient
+                id="lineGrad"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor="var(--accent)" />
+                <stop offset="100%" stopColor="var(--accent2)" />
+              </linearGradient>
+            </defs>
+
+            {points.map((p, i) => (
+              <circle
+                key={i}
+                cx={p.x}
+                cy={p.y}
+                r="4"
+                fill="var(--accent)"
+                stroke="var(--bg2)"
+                strokeWidth="2"
+              />
+            ))}
+          </svg>
+        </div>
+      </div>
+
+      <div style={{ padding: "16px 20px 0" }}>
+        <p
+          style={{
+            fontWeight: 600,
+            fontSize: 14,
+            color: "var(--text2)",
+            marginBottom: 12,
+          }}
+        >
+          ИСТОРИЯ
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {[...sorted].reverse().map(e => (
-            <div key={e.id} style={{ display:"flex", alignItems:"center", padding:"11px 14px", background:"var(--card)", borderRadius:10, border:"1px solid var(--border)" }}>
-              <div style={{ flex:1 }}>
-                <p style={{ fontWeight:500, fontSize:14 }}>{new Date(e.date).toLocaleDateString("ru-RU",{day:"numeric",month:"long",year:"numeric"})}</p>
-                {e.date===todayKey && <Tag color="accent">Сегодня</Tag>}
+            <div
+              key={e.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "11px 14px",
+                background: "var(--card)",
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <p style={{ fontWeight: 500, fontSize: 14 }}>
+                  {new Date(e.date).toLocaleDateString("ru-RU", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+
+                {e.date === todayKey && <Tag color="accent">Сегодня</Tag>}
               </div>
-              <span style={{ fontWeight:700, fontSize:17 }}>{e.weight} кг</span>
-              <button onClick={()=>deleteEntry(e.id)} style={{ background:"none", border:"none", color:"var(--text3)", cursor:"pointer", marginLeft:10, display:"flex", transition:"color 0.15s" }} onMouseEnter={e=>e.currentTarget.style.color="var(--red)"} onMouseLeave={e=>e.currentTarget.style.color="var(--text3)"}><Icons.Trash/></button>
+
+              <span style={{ fontWeight: 700, fontSize: 17 }}>
+                {e.weight} кг
+              </span>
+
+              <button
+                onClick={() => deleteEntry(e.id)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--text3)",
+                  cursor: "pointer",
+                  marginLeft: 10,
+                  display: "flex",
+                  transition: "color 0.15s",
+                }}
+                onMouseEnter={e =>
+                  (e.currentTarget.style.color = "var(--red)")
+                }
+                onMouseLeave={e =>
+                  (e.currentTarget.style.color = "var(--text3)")
+                }
+              >
+                <Icons.Trash />
+              </button>
             </div>
           ))}
-          {sorted.length===0 && <div style={{ textAlign:"center", padding:40, color:"var(--text3)" }}>Нет записей</div>}
+
+          {sorted.length === 0 && (
+            <div
+              style={{
+                textAlign: "center",
+                padding: 40,
+                color: "var(--text3)",
+              }}
+            >
+              Нет записей
+            </div>
+          )}
         </div>
       </div>
     </div>
