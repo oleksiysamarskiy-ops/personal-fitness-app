@@ -1,16 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { FOODS_DB } from "./foods.js";
 
 // ─── УТИЛИТЫ ──────────────────────────────────────────────────────────────────
 
-const today = () => {
-  const d = new Date();
-
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-};
+const today = () => new Date().toISOString().split("T")[0];
 const todayLabel = () => {
   const d = new Date();
   return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
@@ -60,10 +53,22 @@ const DEFAULT_ROUTINE = [
 
 const DEFAULT_NUTRITION = WEEKDAYS_FULL.reduce((acc, day) => {
   acc[day] = {
-    "Завтрак": { items: [{ id: uid(), name: "Овсянка", grams: 80, caloriesPer100g: 350 }, { id: uid(), name: "Молоко", grams: 200, caloriesPer100g: 60 }] },
-    "Обед": { items: [{ id: uid(), name: "Куриная грудка", grams: 250, caloriesPer100g: 165 }, { id: uid(), name: "Рис", grams: 150, caloriesPer100g: 130 }, { id: uid(), name: "Овощи", grams: 200, caloriesPer100g: 40 }] },
-    "Перекус": { items: [{ id: uid(), name: "Творог", grams: 200, caloriesPer100g: 100 }] },
-    "Ужин": { items: [{ id: uid(), name: "Лосось", grams: 200, caloriesPer100g: 208 }, { id: uid(), name: "Брокколи", grams: 150, caloriesPer100g: 35 }] },
+    "Завтрак": { items: [
+      { id: uid(), name: "Овсянка (варёная)",   grams: 80,  calories: 71,  protein: 2.5, fat: 1.5, carbs: 12 },
+      { id: uid(), name: "Молоко 1.5%",         grams: 200, calories: 44,  protein: 3,   fat: 1.5, carbs: 5  },
+    ]},
+    "Обед": { items: [
+      { id: uid(), name: "Куриная грудка (варёная)", grams: 250, calories: 165, protein: 31,  fat: 3.6, carbs: 0  },
+      { id: uid(), name: "Рис белый (варёный)",      grams: 150, calories: 130, protein: 2.7, fat: 0.3, carbs: 28 },
+      { id: uid(), name: "Брокколи",                 grams: 150, calories: 34,  protein: 2.8, fat: 0.4, carbs: 7  },
+    ]},
+    "Перекус": { items: [
+      { id: uid(), name: "Творог 5%", grams: 200, calories: 121, protein: 17,  fat: 5,   carbs: 1.8 },
+    ]},
+    "Ужин": { items: [
+      { id: uid(), name: "Лосось (запечённый)", grams: 200, calories: 206, protein: 20, fat: 13, carbs: 0 },
+      { id: uid(), name: "Брокколи",            grams: 150, calories: 34,  protein: 2.8, fat: 0.4, carbs: 7 },
+    ]},
   };
   return acc;
 }, {});
@@ -75,8 +80,30 @@ const DEFAULT_WORKOUTS = {
   "Вторник": null, "Четверг": null, "Суббота": null, "Воскресенье": null,
 };
 
+// Считает калории приёма пищи (поддерживает новый и старый формат)
 function calcMealCal(items) {
-  return Math.round(items.reduce((s, i) => s + (i.grams * i.caloriesPer100g / 100), 0));
+  return Math.round(items.reduce((s, i) => {
+    if (i.calories !== undefined) return s + (i.grams * i.calories / 100);
+    return s + (i.grams * (i.caloriesPer100g || 0) / 100); // backward compat
+  }, 0));
+}
+
+// Считает БЖУ + калории приёма пищи
+function calcMealMacros(items) {
+  const result = { calories: 0, protein: 0, fat: 0, carbs: 0 };
+  for (const i of items) {
+    const k = i.grams / 100;
+    result.calories += (i.calories ?? i.caloriesPer100g ?? 0) * k;
+    result.protein  += (i.protein ?? 0) * k;
+    result.fat      += (i.fat ?? 0) * k;
+    result.carbs    += (i.carbs ?? 0) * k;
+  }
+  return {
+    calories: Math.round(result.calories),
+    protein:  Math.round(result.protein * 10) / 10,
+    fat:      Math.round(result.fat * 10) / 10,
+    carbs:    Math.round(result.carbs * 10) / 10,
+  };
 }
 
 // ─── ИКОНКИ (inline SVG) ──────────────────────────────────────────────────────
@@ -183,7 +210,7 @@ function Tag({ color="accent", children }) {
 
 // ─── СТРАНИЦА: СЕГОДНЯ ────────────────────────────────────────────────────────
 
-function TodayPage({ routine, weightHistory, nutrition, workouts, completions, setCompletions }) {
+function TodayPage({ routine, weightHistory, nutrition, workouts, completions, setCompletions, goals }) {
   const [expanded, setExpanded] = useState({});
   const todayKey = today();
   const wdKey = todayWeekdayKey();
@@ -207,6 +234,20 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
   }, {});
   const totalCal = Object.values(mealCals).reduce((s,v)=>s+v,0);
 
+  // Суммарные макронутриенты за день
+  const totalMacros = MEAL_TYPES.reduce((acc, mt) => {
+    const m = todayNutrition[mt];
+    if (!m) return acc;
+    const macro = calcMealMacros(m.items);
+    acc.protein += macro.protein;
+    acc.fat     += macro.fat;
+    acc.carbs   += macro.carbs;
+    return acc;
+  }, { protein: 0, fat: 0, carbs: 0 });
+  totalMacros.protein = Math.round(totalMacros.protein * 10) / 10;
+  totalMacros.fat     = Math.round(totalMacros.fat * 10) / 10;
+  totalMacros.carbs   = Math.round(totalMacros.carbs * 10) / 10;
+
   function toggleDone(id) {
     setCompletions(prev => ({
       ...prev,
@@ -219,7 +260,7 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
     if (task.type === "meal") {
       const meal = todayNutrition[task.mealType];
       const cal = meal ? calcMealCal(meal.items) : 0;
-      return { subtitle: `${cal} ккал`, detail: meal?.items?.map(i => `${i.name} — ${i.grams}г (${Math.round(i.grams*i.caloriesPer100g/100)} ккал)`).join("\n") || "Нет данных" };
+      return { subtitle: `${cal} ккал`, detail: meal?.items?.map(i => `${i.name} — ${i.grams}г (${Math.round(i.grams*(i.calories??i.caloriesPer100g??0)/100)} ккал)`).join("\n") || "Нет данных" };
     }
     if (task.type === "workout") {
       if (!todayWorkout) return { subtitle: "Выходной", detail: "Тренировка не запланирована" };
@@ -229,7 +270,23 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
   }
 
   const mealEmojis = { "Завтрак":"🌅","Обед":"☀️","Перекус":"🍎","Ужин":"🌙" };
-  const typeEmojis = { generic:"📌", meal:"🍽", workout:"💪" };
+
+  // Прогресс-бар
+  function MacroBar({ label, current, goal, color }) {
+    const pct = goal > 0 ? Math.min(100, Math.round(current / goal * 100)) : 0;
+    const colors = { green: "var(--green)", accent: "var(--accent)", amber: "var(--amber)", blue: "var(--blue)" };
+    return (
+      <div style={{ flex: 1 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+          <span style={{ fontSize:11, color:"var(--text2)", fontWeight:500 }}>{label}</span>
+          <span style={{ fontSize:11, fontWeight:600 }}>{current}{goal > 0 ? <span style={{color:"var(--text3)"}}>/{goal}</span> : ""} г</span>
+        </div>
+        <div style={{ background:"var(--bg3)", borderRadius:4, height:5, overflow:"hidden" }}>
+          <div style={{ width:`${pct}%`, height:"100%", background:colors[color]||colors.accent, borderRadius:4, transition:"width 0.4s ease" }}/>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fade-in" style={{ padding:"0 0 100px" }}>
@@ -254,7 +311,7 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
           <Tag color={trendColor}>{trend}</Tag>
         </div>
 
-        {/* Прогресс */}
+        {/* Прогресс задач */}
         <div style={{ background:"var(--card)", borderRadius:"var(--radius)", padding:"14px 16px", border:"1px solid var(--border)" }}>
           <p style={{ color:"var(--text2)", fontSize:12, fontWeight:500, marginBottom:4 }}>ЗАДАЧИ</p>
           <p style={{ fontSize:28, fontWeight:700 }}>{completed}<span style={{ color:"var(--text3)", fontWeight:400 }}>/{sortedTasks.length}</span></p>
@@ -265,21 +322,46 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
         </div>
       </div>
 
-      {/* Калории */}
+      {/* Калории + БЖУ */}
       <div style={{ margin:"12px 20px 0", background:"var(--card)", borderRadius:"var(--radius)", padding:"14px 16px", border:"1px solid var(--border)" }}>
+        {/* Заголовок с калориями */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-          <p style={{ color:"var(--text2)", fontSize:12, fontWeight:500 }}>КАЛОРИИ СЕГОДНЯ</p>
+          <p style={{ color:"var(--text2)", fontSize:12, fontWeight:500 }}>ПИТАНИЕ СЕГОДНЯ</p>
           <div style={{ display:"flex", alignItems:"center", gap:6 }}>
             <Icons.Flame/>
             <span style={{ fontWeight:700, fontSize:18 }}>{totalCal}</span>
-            <span style={{ color:"var(--text2)", fontSize:13 }}>ккал</span>
+            {goals.calories > 0 && <span style={{ color:"var(--text2)", fontSize:13 }}>/ {goals.calories} ккал</span>}
+            {!goals.calories && <span style={{ color:"var(--text2)", fontSize:13 }}>ккал</span>}
           </div>
         </div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
+        {/* Прогресс калорий */}
+        {goals.calories > 0 && (
+          <div style={{ background:"var(--bg3)", borderRadius:4, height:5, overflow:"hidden", marginBottom:12 }}>
+            <div style={{ width:`${Math.min(100, Math.round(totalCal/goals.calories*100))}%`, height:"100%", background: totalCal > goals.calories ? "var(--red)" : "var(--accent)", borderRadius:4, transition:"width 0.4s ease" }}/>
+          </div>
+        )}
+        {/* По приёмам */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:14 }}>
           {MEAL_TYPES.map(mt => (
             <div key={mt} style={{ textAlign:"center" }}>
               <p style={{ fontSize:11, color:"var(--text3)" }}>{mealEmojis[mt]} {mt}</p>
               <p style={{ fontWeight:600, fontSize:14 }}>{mealCals[mt]}</p>
+            </div>
+          ))}
+        </div>
+        {/* БЖУ */}
+        <div style={{ borderTop:"1px solid var(--border)", paddingTop:12, display:"flex", flexDirection:"column", gap:10 }}>
+          <MacroBar label="Белки" current={totalMacros.protein} goal={goals.protein} color="green"/>
+          <MacroBar label="Жиры"  current={totalMacros.fat}     goal={goals.fat}     color="amber"/>
+          <MacroBar label="Углеводы" current={totalMacros.carbs} goal={goals.carbs}  color="blue"/>
+        </div>
+        {/* Цифры БЖУ крупно */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginTop:12 }}>
+          {[["Б", totalMacros.protein, "var(--green)"], ["Ж", totalMacros.fat, "var(--amber)"], ["У", totalMacros.carbs, "var(--blue)"]].map(([l,v,c]) => (
+            <div key={l} style={{ textAlign:"center", background:"var(--bg3)", borderRadius:8, padding:"8px 4px" }}>
+              <p style={{ fontSize:11, color:"var(--text2)", marginBottom:2 }}>{l}</p>
+              <p style={{ fontWeight:700, fontSize:18, color:c }}>{v}</p>
+              <p style={{ fontSize:10, color:"var(--text3)" }}>г</p>
             </div>
           ))}
         </div>
@@ -347,39 +429,94 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
     </div>
   );
 }
-
-// ─── СТРАНИЦА: ПИТАНИЕ ────────────────────────────────────────────────────────
-
 function NutritionPage({ nutrition, setNutrition }) {
   const [activeDay, setActiveDay] = useState(todayWeekdayKey());
   const [editModal, setEditModal] = useState(null); // { day, mealType, itemIndex? }
-  const [itemForm, setItemForm] = useState({ name:"", grams:"", caloriesPer100g:"" });
+  const [foodSearch, setFoodSearch] = useState("");
+  const [selectedFood, setSelectedFood] = useState(null);
+  const [gramsInput, setGramsInput] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [expandedMeal, setExpandedMeal] = useState({});
 
   const dayName = WEEKDAYS_FULL[activeDay];
   const dayData = nutrition[dayName] || {};
 
+  // Поиск по базе продуктов
+  const searchResults = useMemo(() => {
+    if (!foodSearch.trim()) return [];
+    const q = foodSearch.toLowerCase();
+    return FOODS_DB.filter(f => f.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [foodSearch]);
+
+  // Авторасчёт макросов при выборе продукта и вводе граммов
+  const preview = useMemo(() => {
+    if (!selectedFood || !gramsInput) return null;
+    const g = parseFloat(gramsInput);
+    if (!g || g <= 0) return null;
+    const k = g / 100;
+    return {
+      calories: Math.round(selectedFood.calories * k),
+      protein:  Math.round(selectedFood.protein * k * 10) / 10,
+      fat:      Math.round(selectedFood.fat * k * 10) / 10,
+      carbs:    Math.round(selectedFood.carbs * k * 10) / 10,
+    };
+  }, [selectedFood, gramsInput]);
+
   function openAddItem(mealType) {
-    setItemForm({ name:"", grams:"", caloriesPer100g:"" });
+    setSelectedFood(null);
+    setFoodSearch("");
+    setGramsInput("");
+    setShowDropdown(false);
     setEditModal({ day: dayName, mealType, itemIndex: null });
   }
+
   function openEditItem(mealType, idx) {
     const item = dayData[mealType].items[idx];
-    setItemForm({ name: item.name, grams: String(item.grams), caloriesPer100g: String(item.caloriesPer100g) });
+    // При редактировании показываем существующие данные
+    const food = FOODS_DB.find(f => f.name === item.name) || {
+      name: item.name,
+      calories: item.calories ?? item.caloriesPer100g ?? 0,
+      protein: item.protein ?? 0,
+      fat: item.fat ?? 0,
+      carbs: item.carbs ?? 0,
+    };
+    setSelectedFood(food);
+    setFoodSearch(item.name);
+    setGramsInput(String(item.grams));
+    setShowDropdown(false);
     setEditModal({ day: dayName, mealType, itemIndex: idx });
   }
+
   function saveItem() {
-    if (!itemForm.name || !itemForm.grams) return;
+    if (!selectedFood || !gramsInput) return;
+    const g = parseFloat(gramsInput);
+    if (!g || g <= 0) return;
+    const k = g / 100;
+    const newItem = {
+      id: uid(),
+      name:     selectedFood.name,
+      grams:    g,
+      calories: selectedFood.calories,
+      protein:  selectedFood.protein,
+      fat:      selectedFood.fat,
+      carbs:    selectedFood.carbs,
+      // backward compat
+      caloriesPer100g: selectedFood.calories,
+    };
     setNutrition(prev => {
       const updated = JSON.parse(JSON.stringify(prev));
       if (!updated[editModal.day]) updated[editModal.day] = {};
       if (!updated[editModal.day][editModal.mealType]) updated[editModal.day][editModal.mealType] = { items: [] };
-      const newItem = { id: uid(), name: itemForm.name, grams: parseFloat(itemForm.grams)||0, caloriesPer100g: parseFloat(itemForm.caloriesPer100g)||0 };
-      if (editModal.itemIndex !== null) updated[editModal.day][editModal.mealType].items[editModal.itemIndex] = { ...updated[editModal.day][editModal.mealType].items[editModal.itemIndex], ...newItem };
-      else updated[editModal.day][editModal.mealType].items.push(newItem);
+      if (editModal.itemIndex !== null) {
+        updated[editModal.day][editModal.mealType].items[editModal.itemIndex] = newItem;
+      } else {
+        updated[editModal.day][editModal.mealType].items.push(newItem);
+      }
       return updated;
     });
     setEditModal(null);
   }
+
   function deleteItem(mealType, idx) {
     setNutrition(prev => {
       const updated = JSON.parse(JSON.stringify(prev));
@@ -391,9 +528,20 @@ function NutritionPage({ nutrition, setNutrition }) {
 
   const mealColors = { "Завтрак":"blue","Обед":"green","Перекус":"amber","Ужин":"accent" };
   const mealEmojis = { "Завтрак":"🌅","Обед":"☀️","Перекус":"🍎","Ужин":"🌙" };
-  const [expandedMeal, setExpandedMeal] = useState({});
 
-  const totalDay = MEAL_TYPES.reduce((s,mt) => s + (dayData[mt] ? calcMealCal(dayData[mt].items) : 0), 0);
+  // Итого за день
+  const dayTotals = useMemo(() => {
+    return MEAL_TYPES.reduce((acc, mt) => {
+      const m = dayData[mt];
+      if (!m) return acc;
+      const macro = calcMealMacros(m.items);
+      acc.calories += macro.calories;
+      acc.protein  += macro.protein;
+      acc.fat      += macro.fat;
+      acc.carbs    += macro.carbs;
+      return acc;
+    }, { calories: 0, protein: 0, fat: 0, carbs: 0 });
+  }, [dayData]);
 
   return (
     <div className="fade-in" style={{ padding:"0 0 100px" }}>
@@ -414,13 +562,24 @@ function NutritionPage({ nutrition, setNutrition }) {
         </div>
       </div>
 
-      {/* Итого */}
-      <div style={{ margin:"12px 20px 0", background:"var(--card)", borderRadius:12, padding:"12px 16px", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <span style={{ color:"var(--text2)", fontSize:13 }}>{WEEKDAYS_FULL[activeDay]}</span>
-        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-          <Icons.Flame/>
-          <span style={{ fontWeight:700, fontSize:17 }}>{totalDay}</span>
-          <span style={{ color:"var(--text2)", fontSize:13 }}>ккал</span>
+      {/* Итого за день */}
+      <div style={{ margin:"12px 20px 0", background:"var(--card)", borderRadius:12, padding:"14px 16px", border:"1px solid var(--border)" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+          <span style={{ color:"var(--text2)", fontSize:13, fontWeight:500 }}>{WEEKDAYS_FULL[activeDay]}</span>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+            <Icons.Flame/>
+            <span style={{ fontWeight:700, fontSize:17 }}>{Math.round(dayTotals.calories)}</span>
+            <span style={{ color:"var(--text2)", fontSize:13 }}>ккал</span>
+          </div>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
+          {[["Белки", dayTotals.protein, "var(--green)"], ["Жиры", dayTotals.fat, "var(--amber)"], ["Углеводы", dayTotals.carbs, "var(--blue)"]].map(([l,v,c]) => (
+            <div key={l} style={{ textAlign:"center", background:"var(--bg3)", borderRadius:8, padding:"8px 4px" }}>
+              <p style={{ fontSize:11, color:"var(--text2)", marginBottom:2 }}>{l}</p>
+              <p style={{ fontWeight:700, fontSize:16, color:c }}>{Math.round(v*10)/10}</p>
+              <p style={{ fontSize:10, color:"var(--text3)" }}>г</p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -428,7 +587,7 @@ function NutritionPage({ nutrition, setNutrition }) {
       <div style={{ padding:"12px 20px 0", display:"flex", flexDirection:"column", gap:10 }}>
         {MEAL_TYPES.map(mt => {
           const meal = dayData[mt] || { items: [] };
-          const cal = calcMealCal(meal.items);
+          const macros = calcMealMacros(meal.items);
           const exp = expandedMeal[mt];
           return (
             <div key={mt} style={{ background:"var(--card)", borderRadius:"var(--radius)", border:"1px solid var(--border)", overflow:"hidden" }}>
@@ -436,27 +595,35 @@ function NutritionPage({ nutrition, setNutrition }) {
                 <span style={{ fontSize:20, marginRight:10 }}>{mealEmojis[mt]}</span>
                 <div style={{ flex:1 }}>
                   <span style={{ fontWeight:600, fontSize:15 }}>{mt}</span>
-                  <p style={{ color:"var(--text2)", fontSize:13 }}>{meal.items.length} продуктов · {cal} ккал</p>
+                  <p style={{ color:"var(--text2)", fontSize:12 }}>
+                    {meal.items.length} прод. · Б:{Math.round(macros.protein*10)/10} Ж:{Math.round(macros.fat*10)/10} У:{Math.round(macros.carbs*10)/10}
+                  </p>
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                  <Tag color={mealColors[mt]}>{cal} ккал</Tag>
+                  <Tag color={mealColors[mt]}>{macros.calories} ккал</Tag>
                   {exp ? <Icons.ChevronUp/> : <Icons.ChevronDown/>}
                 </div>
               </div>
               {exp && (
                 <div className="fade-in" style={{ borderTop:"1px solid var(--border)", background:"var(--bg3)" }}>
-                  {meal.items.map((item, idx) => (
-                    <div key={item.id} style={{ display:"flex", alignItems:"center", padding:"10px 16px", borderBottom:"1px solid var(--border)" }}>
-                      <div style={{ flex:1 }}>
-                        <p style={{ fontWeight:500, fontSize:14 }}>{item.name}</p>
-                        <p style={{ color:"var(--text3)", fontSize:12 }}>{item.grams}г · {item.caloriesPer100g} ккал/100г</p>
+                  {meal.items.map((item, idx) => {
+                    const cal = Math.round(item.grams * (item.calories ?? item.caloriesPer100g ?? 0) / 100);
+                    const prot = Math.round(item.grams * (item.protein ?? 0) / 100 * 10) / 10;
+                    const fat  = Math.round(item.grams * (item.fat ?? 0) / 100 * 10) / 10;
+                    const carb = Math.round(item.grams * (item.carbs ?? 0) / 100 * 10) / 10;
+                    return (
+                      <div key={item.id} style={{ display:"flex", alignItems:"center", padding:"10px 16px", borderBottom:"1px solid var(--border)" }}>
+                        <div style={{ flex:1 }}>
+                          <p style={{ fontWeight:500, fontSize:14 }}>{item.name}</p>
+                          <p style={{ color:"var(--text3)", fontSize:11 }}>{item.grams}г · Б:{prot} Ж:{fat} У:{carb}</p>
+                        </div>
+                        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                          <span style={{ fontWeight:600, fontSize:14, color:"var(--accent2)" }}>{cal} ккал</span>
+                          <button onClick={() => openEditItem(mt, idx)} style={{ background:"var(--card2)", border:"none", borderRadius:6, padding:"5px 7px", color:"var(--text2)", cursor:"pointer", display:"flex" }}><Icons.Edit/></button>
+                        </div>
                       </div>
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <span style={{ fontWeight:600, fontSize:14, color:"var(--accent2)" }}>{Math.round(item.grams*item.caloriesPer100g/100)} ккал</span>
-                        <button onClick={() => openEditItem(mt, idx)} style={{ background:"var(--card2)", border:"none", borderRadius:6, padding:"5px 7px", color:"var(--text2)", cursor:"pointer", display:"flex" }}><Icons.Edit/></button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div style={{ padding:"10px 16px" }}>
                     <Btn variant="ghost" small onClick={() => openAddItem(mt)} style={{ color:"var(--accent2)" }}><Icons.Plus/> Добавить продукт</Btn>
                   </div>
@@ -467,22 +634,77 @@ function NutritionPage({ nutrition, setNutrition }) {
         })}
       </div>
 
-      {/* Модал */}
-      <Modal open={!!editModal} onClose={() => setEditModal(null)} title={editModal?.itemIndex!==null ? "Редактировать" : "Добавить продукт"}>
+      {/* Модал добавления/редактирования */}
+      <Modal open={!!editModal} onClose={() => setEditModal(null)} title={editModal?.itemIndex !== null ? "Редактировать продукт" : "Добавить продукт"}>
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-          <div><label style={{ fontSize:13, color:"var(--text2)", display:"block", marginBottom:4 }}>Название</label><input value={itemForm.name} onChange={e=>setItemForm(p=>({...p,name:e.target.value}))} placeholder="Куриная грудка"/></div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-            <div><label style={{ fontSize:13, color:"var(--text2)", display:"block", marginBottom:4 }}>Граммы</label><input type="number" value={itemForm.grams} onChange={e=>setItemForm(p=>({...p,grams:e.target.value}))} placeholder="250"/></div>
-            <div><label style={{ fontSize:13, color:"var(--text2)", display:"block", marginBottom:4 }}>Ккал/100г</label><input type="number" value={itemForm.caloriesPer100g} onChange={e=>setItemForm(p=>({...p,caloriesPer100g:e.target.value}))} placeholder="165"/></div>
+
+          {/* Поиск продукта */}
+          <div style={{ position:"relative" }}>
+            <label style={{ fontSize:13, color:"var(--text2)", display:"block", marginBottom:4 }}>Продукт</label>
+            <input
+              value={foodSearch}
+              onChange={e => { setFoodSearch(e.target.value); setShowDropdown(true); if (!e.target.value) setSelectedFood(null); }}
+              onFocus={() => setShowDropdown(true)}
+              placeholder="Введите название продукта..."
+            />
+            {showDropdown && searchResults.length > 0 && (
+              <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:"var(--radius-sm)", zIndex:200, maxHeight:220, overflowY:"auto", marginTop:4 }} className="scroll-hide">
+                {searchResults.map(food => (
+                  <div
+                    key={food.name}
+                    onClick={() => { setSelectedFood(food); setFoodSearch(food.name); setShowDropdown(false); }}
+                    style={{ padding:"10px 14px", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                    onMouseEnter={e => e.currentTarget.style.background="var(--card2)"}
+                    onMouseLeave={e => e.currentTarget.style.background="transparent"}
+                  >
+                    <p style={{ fontWeight:500, fontSize:14 }}>{food.name}</p>
+                    <p style={{ fontSize:11, color:"var(--text3)" }}>
+                      {food.calories} ккал · Б:{food.protein} Ж:{food.fat} У:{food.carbs} (на 100г)
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          {itemForm.grams && itemForm.caloriesPer100g && (
-            <div style={{ background:"var(--accent-bg)", borderRadius:8, padding:"10px 12px", fontSize:13, color:"var(--accent2)" }}>
-              Итого: {Math.round(parseFloat(itemForm.grams)*parseFloat(itemForm.caloriesPer100g)/100)} ккал
+
+          {/* Только граммы */}
+          <div>
+            <label style={{ fontSize:13, color:"var(--text2)", display:"block", marginBottom:4 }}>Количество (граммы)</label>
+            <input
+              type="number"
+              value={gramsInput}
+              onChange={e => setGramsInput(e.target.value)}
+              placeholder="250"
+              min="1"
+            />
+          </div>
+
+          {/* Предпросмотр авторасчёта */}
+          {selectedFood && (
+            <div style={{ background:"var(--bg3)", borderRadius:8, padding:"10px 12px", fontSize:13 }}>
+              <p style={{ color:"var(--text2)", marginBottom:6, fontWeight:500 }}>
+                {selectedFood.name} — на 100г: {selectedFood.calories} ккал · Б:{selectedFood.protein} Ж:{selectedFood.fat} У:{selectedFood.carbs}
+              </p>
+              {preview && (
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6 }}>
+                  {[["Ккал", preview.calories, "var(--accent2)"], ["Белки", preview.protein+"г", "var(--green)"], ["Жиры", preview.fat+"г", "var(--amber)"], ["Углев.", preview.carbs+"г", "var(--blue)"]].map(([l,v,c]) => (
+                    <div key={l} style={{ textAlign:"center", background:"var(--card)", borderRadius:6, padding:"6px 4px" }}>
+                      <p style={{ fontSize:10, color:"var(--text3)", marginBottom:2 }}>{l}</p>
+                      <p style={{ fontWeight:700, fontSize:14, color:c }}>{v}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
+
           <div style={{ display:"flex", gap:10, marginTop:4 }}>
-            {editModal?.itemIndex!==null && <Btn variant="danger" onClick={() => deleteItem(editModal.mealType, editModal.itemIndex)}><Icons.Trash/> Удалить</Btn>}
-            <Btn onClick={saveItem} style={{ flex:1, justifyContent:"center" }}>Сохранить</Btn>
+            {editModal?.itemIndex !== null && (
+              <Btn variant="danger" onClick={() => deleteItem(editModal.mealType, editModal.itemIndex)}><Icons.Trash/> Удалить</Btn>
+            )}
+            <Btn onClick={saveItem} style={{ flex:1, justifyContent:"center" }} disabled={!selectedFood || !gramsInput}>
+              Сохранить
+            </Btn>
           </div>
         </div>
       </Modal>
@@ -637,11 +859,6 @@ function WeightPage({ weightHistory, setWeightHistory }) {
   const [filter, setFilter] = useState("30");
   const todayKey = today();
   const todayEntry = weightHistory.find(e => e.date === todayKey);
-  useEffect(() => {
-  if (todayEntry) {
-    setWeightInput(String(todayEntry.weight));
-  }
-}, [todayEntry]);
   const sorted = [...weightHistory].sort((a,b) => a.date.localeCompare(b.date));
 
   const last = sorted.length ? sorted[sorted.length-1] : null;
@@ -778,7 +995,7 @@ function WeightPage({ weightHistory, setWeightHistory }) {
 
 // ─── СТРАНИЦА: НАСТРОЙКИ ──────────────────────────────────────────────────────
 
-function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nutrition, workouts }) {
+function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nutrition, workouts, goals, setGoals }) {
   const [addModal, setAddModal] = useState(false);
   const [editTask, setEditTask] = useState(null);
   const [form, setForm] = useState({ title:"", time:"08:00", type:"generic", mealType:"Завтрак", notes:"" });
@@ -846,6 +1063,31 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nut
 
       {/* Экспорт */}
       <div style={{ padding:"20px 20px 0" }}>
+
+      {/* Цели по питанию */}
+      <div style={{ padding:"20px 20px 0" }}>
+        <p style={{ fontWeight:600, fontSize:15, marginBottom:12 }}>Цели по питанию</p>
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {[
+            ["calories", "Калории (ккал/день)", "2000"],
+            ["protein",  "Белки (г/день)",      "150"],
+            ["fat",      "Жиры (г/день)",        "70"],
+            ["carbs",    "Углеводы (г/день)",    "250"],
+          ].map(([key, label, ph]) => (
+            <div key={key} style={{ background:"var(--card)", borderRadius:10, padding:"12px 14px", border:"1px solid var(--border)" }}>
+              <label style={{ fontSize:13, color:"var(--text2)", display:"block", marginBottom:6 }}>{label}</label>
+              <input
+                type="number"
+                value={goals[key] || ""}
+                onChange={e => setGoals(p => ({ ...p, [key]: parseInt(e.target.value)||0 }))}
+                placeholder={ph}
+                min="0"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
         <p style={{ fontWeight:600, fontSize:15, marginBottom:12 }}>Данные</p>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           <div style={{ background:"var(--card)", borderRadius:12, padding:"14px 16px", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -922,6 +1164,7 @@ export default function App() {
   const [workouts, setWorkouts] = useLocalStorage("fitness_workouts", DEFAULT_WORKOUTS);
   const [weightHistory, setWeightHistory] = useLocalStorage("fitness_weight", []);
   const [completions, setCompletions] = useLocalStorage("fitness_completions", {});
+  const [goals, setGoals] = useLocalStorage("fitness_goals", { calories: 2000, protein: 150, fat: 70, carbs: 250 });
 
   // Применяем тему
   useEffect(() => {
@@ -966,6 +1209,7 @@ export default function App() {
             weightHistory={weightHistory} setWeightHistory={setWeightHistory}
             completions={completions} setCompletions={setCompletions}
             theme={theme} setTheme={setTheme}
+            goals={goals} setGoals={setGoals}
           />
         </div>
         {/* Нижняя навигация */}
