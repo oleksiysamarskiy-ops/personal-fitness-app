@@ -8,7 +8,7 @@ const todayLabel = () => {
   const d = new Date();
   return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 };
-const weekdayIndex = () => new Date().getDay(); // 0=Sun
+const weekdayIndex = () => new Date().getDay();
 const DAYS = ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
 const DAYS_FULL = ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
 const WEEKDAYS = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
@@ -17,7 +17,7 @@ const MEAL_TYPES = ["Завтрак","Обед","Перекус","Ужин"];
 
 function todayWeekdayKey() {
   const d = new Date().getDay();
-  const map = [6,0,1,2,3,4,5]; // Sun=6, Mon=0...
+  const map = [6,0,1,2,3,4,5];
   return map[d];
 }
 
@@ -80,15 +80,13 @@ const DEFAULT_WORKOUTS = {
   "Вторник": null, "Четверг": null, "Суббота": null, "Воскресенье": null,
 };
 
-// Считает калории приёма пищи (поддерживает новый и старый формат)
 function calcMealCal(items) {
   return Math.round(items.reduce((s, i) => {
     if (i.calories !== undefined) return s + (i.grams * i.calories / 100);
-    return s + (i.grams * (i.caloriesPer100g || 0) / 100); // backward compat
+    return s + (i.grams * (i.caloriesPer100g || 0) / 100);
   }, 0));
 }
 
-// Считает БЖУ + калории приёма пищи
 function calcMealMacros(items) {
   const result = { calories: 0, protein: 0, fat: 0, carbs: 0 };
   for (const i of items) {
@@ -106,7 +104,7 @@ function calcMealMacros(items) {
   };
 }
 
-// ─── ИКОНКИ (inline SVG) ──────────────────────────────────────────────────────
+// ─── ИКОНКИ ───────────────────────────────────────────────────────────────────
 
 const Icons = {
   Home: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:22,height:22}}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
@@ -126,6 +124,8 @@ const Icons = {
   X: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{width:16,height:16}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   Flame: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:18,height:18}}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"/></svg>,
   Droplet: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:18,height:18}}><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
+  Target: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:18,height:18}}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  Zap: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
 };
 
 // ─── СТИЛИ ────────────────────────────────────────────────────────────────────
@@ -146,9 +146,9 @@ const css = `
     --text: #eeeef5;
     --text2: #8080a0;
     --text3: #44445a;
-    --accent: #6366f1;
-    --accent2: #a5b4fc;
-    --accent-bg: rgba(99,102,241,0.12);
+    --accent: #7c6af5;
+    --accent2: #a99cf8;
+    --accent-bg: rgba(124,106,245,0.12);
     --green: #10b981;
     --green-bg: rgba(16,185,129,0.1);
     --red: #f43f5e;
@@ -156,7 +156,8 @@ const css = `
     --amber: #f59e0b;
     --amber-bg: rgba(245,158,11,0.1);
     --blue: #38bdf8;
-    --blue-bg: rgba(56,189,248,0.1);
+    --blue-bg: rgba(56,189,248,0.08);
+    --blue-border: rgba(56,189,248,0.18);
     --radius: 16px;
     --radius-sm: 10px;
     --font: 'Sora', sans-serif;
@@ -185,22 +186,35 @@ const css = `
     font-size: 14px;
     width: 100%;
     outline: none;
-    transition: border-color 0.15s;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   }
-  input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(124,106,245,0.15);
+    background: rgba(124,106,245,0.04);
+  }
   select option { background: var(--bg2); }
 
   .scroll-hide::-webkit-scrollbar { display: none; }
   .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes slideUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes expandDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(32px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes expandDown {
+    from { opacity: 0; transform: translateY(-6px) scaleY(0.96); }
+    to   { opacity: 1; transform: translateY(0) scaleY(1); }
+  }
   @keyframes checkPop { 0% { transform: scale(0.4); } 65% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(40px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+  @keyframes waterFill { from { width: 0%; } to { width: var(--target-w); } }
+  @keyframes dropIn { from { transform: translateY(-8px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+  @keyframes ripple { 0% { transform: scale(0); opacity: 0.6; } 100% { transform: scale(2.5); opacity: 0; } }
 
   .fade-in { animation: fadeIn 0.3s cubic-bezier(0.22,1,0.36,1); }
-  .slide-up { animation: slideUp 0.35s cubic-bezier(0.22,1,0.36,1); }
-  .expand-down { animation: expandDown 0.2s ease; }
+  .slide-up { animation: modalIn 0.38s cubic-bezier(0.16,1,0.3,1); }
+  .expand-down { animation: expandDown 0.22s cubic-bezier(0.22,1,0.36,1); transform-origin: top; }
   .check-pop { animation: checkPop 0.3s cubic-bezier(0.22,1,0.36,1); }
 
   input[type="time"] {
@@ -210,7 +224,6 @@ const css = `
   }
   input[type="time"]::-webkit-date-and-time-value { text-align: left; }
 
-  /* Page header gradient */
   .page-header {
     padding: 28px 20px 0;
     position: relative;
@@ -219,79 +232,104 @@ const css = `
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; height: 120px;
-    background: radial-gradient(ellipse 60% 80px at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 100%);
+    background: radial-gradient(ellipse 60% 80px at 50% 0%, rgba(124,106,245,0.1) 0%, transparent 100%);
     pointer-events: none;
   }
 
-  /* Nav pill */
-  .nav-pill {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 100%;
-    background: var(--accent-bg);
-    border-radius: 14px;
-    transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
-    pointer-events: none;
-  }
-
-  /* Task row hover */
-  .task-row { transition: all 0.18s ease; }
-  .task-row:active { transform: scale(0.99); }
-
-  /* Btn hover */
-  .btn-primary:hover { filter: brightness(1.12); }
-  .btn-secondary:hover { background: var(--card2) !important; }
+  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0) scale(0.98); }
+  .btn-secondary:hover { background: var(--card2) !important; border-color: var(--border2) !important; }
   .btn-ghost:hover { color: var(--text) !important; }
 
-  /* Card hover subtle */
-  .card-hover { transition: border-color 0.18s, box-shadow 0.18s; }
-  .card-hover:hover { border-color: var(--border2) !important; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+  .card-hover { transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; }
+  .card-hover:hover { border-color: rgba(124,106,245,0.25) !important; box-shadow: 0 4px 24px rgba(0,0,0,0.35); }
 
-  /* Mono numbers */
   .mono { font-family: var(--mono); }
 
-  /* Progress bar shine */
-  @keyframes shimmer {
-    from { background-position: -200% 0; }
-    to   { background-position: 200% 0; }
-  }
   .bar-fill {
     height: 100%;
     border-radius: 99px;
-    transition: width 0.5s cubic-bezier(0.22,1,0.36,1);
+    transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
   }
 
-  /* Dot indicator */
   .today-dot {
     width: 4px; height: 4px; border-radius: 50%;
     background: var(--accent);
     position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
   }
 
-  /* Water bubble buttons */
-  .water-btn {
-    background: var(--blue-bg);
-    border: 1px solid rgba(56,189,248,0.2) !important;
-    border-radius: 12px;
-    padding: 10px 0;
-    color: var(--blue);
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    font-family: var(--font);
-    transition: all 0.15s;
+  /* Water section redesign */
+  .water-drop-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.22,1,0.36,1);
   }
-  .water-btn:hover { background: rgba(56,189,248,0.18); transform: translateY(-1px); }
-  .water-btn:active { transform: scale(0.97); }
+  .water-drop-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(56,189,248,0.2); }
+  .water-drop-btn:active { transform: scale(0.96); }
+  .water-drop-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(56,189,248,0.15);
+    transform: scale(0);
+    transition: transform 0.3s ease;
+  }
+  .water-drop-btn:active::after { transform: scale(2); opacity: 0; transition: transform 0.4s ease, opacity 0.4s ease; }
+
+  /* Goals section */
+  .goal-card {
+    transition: all 0.2s cubic-bezier(0.22,1,0.36,1);
+  }
+  .goal-card:focus-within {
+    border-color: rgba(124,106,245,0.4) !important;
+    box-shadow: 0 0 0 3px rgba(124,106,245,0.08), 0 4px 20px rgba(0,0,0,0.3) !important;
+    transform: translateY(-1px);
+  }
+
+  /* Segment selector */
+  .seg-btn {
+    transition: all 0.2s cubic-bezier(0.22,1,0.36,1);
+    position: relative;
+  }
+  .seg-btn.active { color: #fff !important; }
+  .seg-btn:not(.active):hover { background: rgba(255,255,255,0.05) !important; color: var(--text) !important; }
+
+  /* Dropdown animation */
+  .dropdown-list {
+    animation: dropIn 0.18s cubic-bezier(0.22,1,0.36,1);
+    transform-origin: top;
+  }
+  .dropdown-item { transition: background 0.12s ease; }
+  .dropdown-item:hover { background: var(--card2) !important; }
+
+  /* Task row */
+  .task-row { transition: all 0.18s ease; }
+  .task-row:active { transform: scale(0.99); }
 
   /* Section label */
   .section-label {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 12px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text3); margin-bottom: 12px;
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    animation: overlayIn 0.22s ease;
+  }
+
+  /* Nav active dot */
+  .nav-active-dot {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 32px; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    animation: fadeIn 0.2s ease;
+  }
+
+  /* Water bubbles animation */
+  @keyframes bubbleFloat {
+    0%,100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-3px) scale(1.03); }
   }
 `;
 
@@ -301,17 +339,24 @@ function Modal({ open, onClose, title, children }) {
   if (!open) return null;
   return (
     <div
-      style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)", backdropFilter:"blur(6px)", display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:1000 }}
+      className="modal-overlay"
+      style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", backdropFilter:"blur(8px)", display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:1000 }}
       onClick={e => e.target===e.currentTarget && onClose()}
     >
-      <div className="slide-up" style={{ background:"var(--bg2)", borderRadius:"22px 22px 0 0", width:"100%", maxWidth:500, maxHeight:"92vh", overflowY:"auto", padding:"0 0 env(safe-area-inset-bottom,24px)" }} >
-        {/* Handle */}
+      <div className="slide-up" style={{ background:"var(--bg2)", borderRadius:"24px 24px 0 0", width:"100%", maxWidth:500, maxHeight:"92vh", overflowY:"auto", paddingBottom:"env(safe-area-inset-bottom,24px)", border:"1px solid var(--border2)", borderBottom:"none" }}>
         <div style={{ display:"flex", justifyContent:"center", padding:"12px 0 0" }}>
           <div style={{ width:36, height:4, borderRadius:99, background:"var(--border2)" }}/>
         </div>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px 20px" }}>
           <span style={{ fontWeight:700, fontSize:17, letterSpacing:"-0.02em" }}>{title}</span>
-          <button onClick={onClose} style={{ background:"var(--card2)", border:"1px solid var(--border)", borderRadius:99, width:30, height:30, color:"var(--text2)", display:"flex", alignItems:"center", justifyContent:"center" }}><Icons.X/></button>
+          <button
+            onClick={onClose}
+            style={{ background:"var(--card2)", border:"1px solid var(--border)", borderRadius:99, width:32, height:32, color:"var(--text2)", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.background="var(--border2)"; e.currentTarget.style.color="var(--text)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background="var(--card2)"; e.currentTarget.style.color="var(--text2)"; }}
+          >
+            <Icons.X/>
+          </button>
         </div>
         <div style={{ padding:"0 20px 32px" }}>
           {children}
@@ -326,13 +371,13 @@ function Btn({ children, onClick, variant="primary", style:s={}, small=false, di
     border:"none", borderRadius: small ? 10 : 14,
     fontWeight:600, cursor: disabled ? "not-allowed" : "pointer",
     display:"inline-flex", alignItems:"center", gap:6,
-    transition:"all 0.15s", fontFamily:"var(--font)",
+    transition:"all 0.18s cubic-bezier(0.22,1,0.36,1)", fontFamily:"var(--font)",
     fontSize: small ? 13 : 14,
     padding: small ? "8px 14px" : "13px 20px",
     opacity: disabled ? 0.45 : 1,
   };
   const variants = {
-    primary: { background:"var(--accent)", color:"#fff", boxShadow:"0 2px 12px rgba(99,102,241,0.3)" },
+    primary: { background:"linear-gradient(135deg, var(--accent), #9b8ff8)", color:"#fff", boxShadow:"0 2px 14px rgba(124,106,245,0.35)" },
     secondary: { background:"var(--card2)", color:"var(--text2)", border:"1px solid var(--border2)" },
     ghost: { background:"transparent", color:"var(--text2)" },
     danger: { background:"var(--red-bg)", color:"var(--red)", border:"1px solid rgba(244,63,94,0.2)" },
@@ -344,7 +389,7 @@ function Btn({ children, onClick, variant="primary", style:s={}, small=false, di
 
 function Tag({ color="accent", children }) {
   const map = {
-    accent: ["rgba(99,102,241,0.12)", "var(--accent2)"],
+    accent: ["rgba(124,106,245,0.14)", "var(--accent2)"],
     green:  ["rgba(16,185,129,0.1)",  "var(--green)"],
     red:    ["rgba(244,63,94,0.1)",   "var(--red)"],
     amber:  ["rgba(245,158,11,0.1)",  "var(--amber)"],
@@ -354,23 +399,22 @@ function Tag({ color="accent", children }) {
   return <span style={{ background:bg, color:col, borderRadius:99, padding:"3px 9px", fontSize:11, fontWeight:600, letterSpacing:"0.01em" }}>{children}</span>;
 }
 
-// ─── СТРАНИЦА: СЕГОДНЯ ────────────────────────────────────────────────────────
+// ─── ВОДА — КРАСИВЫЙ ВИДЖЕТ ───────────────────────────────────────────────────
 
-function TodayPage({ routine, weightHistory, nutrition, workouts, completions, setCompletions, goals, waterGoal, waterData, setWaterData }) {
-  const [expanded, setExpanded] = useState({});
-  const [customWater, setCustomWater] = useState("");
-  const [showWaterLog, setShowWaterLog] = useState(false);
+function WaterWidget({ waterData, setWaterData, waterGoal }) {
   const todayKey = today();
-  const wdKey = todayWeekdayKey();
-  const wdName = WEEKDAYS_FULL[wdKey];
-  const todayNutrition = nutrition[wdName] || {};
-  const todayWorkout = workouts[wdName] || null;
-  const todayCompletions = completions[todayKey] || {};
-
-  // Вода: данные текущего дня
   const todayWater = waterData[todayKey] || { total: 0, log: [] };
+  const [customWater, setCustomWater] = useState("");
+  const [showLog, setShowLog] = useState(false);
+  const [lastAdded, setLastAdded] = useState(null);
+
+  const pct = waterGoal > 0 ? Math.min(100, Math.round(todayWater.total / waterGoal * 100)) : 0;
+  const remaining = Math.max(0, waterGoal - todayWater.total);
+
   function addWater(ml) {
     const time = new Date().toLocaleTimeString("ru-RU", { hour:"2-digit", minute:"2-digit" });
+    setLastAdded(ml);
+    setTimeout(() => setLastAdded(null), 1200);
     setWaterData(prev => {
       const day = prev[todayKey] || { total: 0, log: [] };
       return { ...prev, [todayKey]: { total: day.total + ml, log: [...day.log, { time, amount: ml }] } };
@@ -381,16 +425,193 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
       const day = prev[todayKey];
       if (!day || !day.log.length) return prev;
       const newLog = day.log.slice(0, -1);
-      const newTotal = newLog.reduce((s, e) => s + e.amount, 0);
-      return { ...prev, [todayKey]: { total: newTotal, log: newLog } };
+      return { ...prev, [todayKey]: { total: newLog.reduce((s,e)=>s+e.amount,0), log: newLog } };
     });
   }
-  function addCustomWater() {
+  function addCustom() {
     const ml = parseInt(customWater);
     if (!ml || ml <= 0 || ml > 5000) return;
     addWater(ml);
     setCustomWater("");
   }
+
+  // Стаканы для визуализации
+  const cups = Math.min(8, Math.round(todayWater.total / 250));
+  const totalCups = 8;
+
+  return (
+    <div style={{ margin:"12px 20px 0", background:"var(--card)", borderRadius:"var(--radius)", border:"1px solid var(--border)", overflow:"hidden" }}>
+      {/* Шапка с градиентом */}
+      <div style={{ background:"linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(14,165,233,0.04) 100%)", padding:"16px 16px 14px", borderBottom:"1px solid var(--border)" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:36, height:36, borderRadius:12, background:"rgba(56,189,248,0.12)", border:"1px solid rgba(56,189,248,0.2)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--blue)" }}>
+              <Icons.Droplet/>
+            </div>
+            <div>
+              <p style={{ fontSize:11, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--text3)" }}>Вода</p>
+              <p style={{ fontSize:13, color:"var(--text2)", marginTop:1 }}>
+                {pct >= 100 ? "🎉 Цель достигнута!" : `Ещё ${remaining} мл`}
+              </p>
+            </div>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ display:"flex", alignItems:"baseline", gap:3 }}>
+              <span style={{ fontFamily:"var(--mono)", fontWeight:600, fontSize:22, color:"var(--blue)", letterSpacing:"-0.02em" }}>{todayWater.total}</span>
+              <span style={{ color:"var(--text3)", fontSize:12 }}>/ {waterGoal}</span>
+            </div>
+            <p style={{ fontSize:11, color:"var(--text3)" }}>мл</p>
+          </div>
+        </div>
+
+        {/* Круговой прогресс + бар */}
+        <div style={{ marginTop:14 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+            <span style={{ fontSize:11, color:"var(--text3)", fontWeight:600 }}>{pct}%</span>
+            <span style={{ fontSize:11, color: pct >= 100 ? "var(--green)" : "var(--text3)" }}>
+              {pct >= 100 ? "✓ выполнено" : `${todayWater.log.length} порций`}
+            </span>
+          </div>
+          <div style={{ background:"rgba(56,189,248,0.08)", borderRadius:99, height:8, overflow:"hidden", position:"relative" }}>
+            <div style={{
+              width:`${pct}%`, height:"100%",
+              background: pct >= 100
+                ? "linear-gradient(90deg, var(--blue), var(--green))"
+                : "linear-gradient(90deg, rgba(56,189,248,0.8), var(--blue))",
+              borderRadius:99,
+              transition:"width 0.7s cubic-bezier(0.22,1,0.36,1)",
+              boxShadow: pct > 0 ? "0 0 12px rgba(56,189,248,0.4)" : "none",
+            }}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Стаканы-индикаторы */}
+      <div style={{ padding:"12px 16px", display:"flex", gap:5, justifyContent:"center", borderBottom:"1px solid var(--border)" }}>
+        {Array.from({length:totalCups}).map((_,i) => (
+          <div
+            key={i}
+            onClick={() => i >= cups ? addWater(250) : null}
+            style={{
+              flex:1, height:24, borderRadius:6,
+              background: i < cups ? "rgba(56,189,248,0.25)" : "var(--bg3)",
+              border: i < cups ? "1px solid rgba(56,189,248,0.3)" : "1px solid var(--border)",
+              cursor: i >= cups ? "pointer" : "default",
+              transition:"all 0.25s cubic-bezier(0.22,1,0.36,1)",
+              transform: lastAdded && i === cups - 1 ? "scale(1.15)" : "scale(1)",
+              boxShadow: i < cups ? "0 0 8px rgba(56,189,248,0.15)" : "none",
+              position:"relative", overflow:"hidden",
+            }}
+          >
+            {i < cups && (
+              <div style={{
+                position:"absolute", inset:0,
+                background:"linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%)",
+              }}/>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Кнопки быстрого добавления */}
+      <div style={{ padding:"12px 16px", display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+        {[150, 250, 500].map(ml => (
+          <button
+            key={ml}
+            onClick={() => addWater(ml)}
+            className="water-drop-btn"
+            style={{
+              background:"var(--blue-bg)",
+              border:"1px solid var(--blue-border)",
+              borderRadius:12, padding:"10px 0",
+              color:"var(--blue)", fontWeight:700, fontSize:14,
+              cursor:"pointer", fontFamily:"var(--font)",
+              display:"flex", flexDirection:"column", alignItems:"center", gap:2,
+            }}
+          >
+            <span style={{ fontSize:16 }}>💧</span>
+            <span>+{ml}</span>
+            <span style={{ fontSize:10, color:"rgba(56,189,248,0.6)", fontWeight:500 }}>мл</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Кастомный ввод */}
+      <div style={{ padding:"0 16px 12px", display:"flex", gap:8 }}>
+        <div style={{ flex:1, position:"relative" }}>
+          <input
+            type="number"
+            value={customWater}
+            onChange={e => setCustomWater(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && addCustom()}
+            placeholder="Другое кол-во (мл)"
+            style={{ paddingRight:80 }}
+          />
+          <button
+            onClick={addCustom}
+            style={{
+              position:"absolute", right:6, top:"50%", transform:"translateY(-50%)",
+              background:"linear-gradient(135deg, var(--accent), #9b8ff8)",
+              border:"none", borderRadius:7, padding:"5px 12px",
+              color:"#fff", fontWeight:700, cursor:"pointer", fontFamily:"var(--font)", fontSize:13,
+              transition:"all 0.15s",
+            }}
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      {/* Лог */}
+      <div style={{ padding:"0 16px 14px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <button
+          onClick={() => setShowLog(p => !p)}
+          style={{ background:"none", border:"none", color:"var(--text3)", fontSize:12, cursor:"pointer", fontFamily:"var(--font)", display:"flex", alignItems:"center", gap:4, transition:"color 0.15s" }}
+          onMouseEnter={e => e.currentTarget.style.color="var(--text2)"}
+          onMouseLeave={e => e.currentTarget.style.color="var(--text3)"}
+        >
+          {showLog ? <Icons.ChevronUp/> : <Icons.ChevronDown/>}
+          {todayWater.log.length} записей
+        </button>
+        {todayWater.log.length > 0 && (
+          <button
+            onClick={removeLastWater}
+            style={{ background:"var(--red-bg)", border:"1px solid rgba(244,63,94,0.15)", borderRadius:8, padding:"5px 12px", color:"var(--red)", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"var(--font)", transition:"all 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.background="rgba(244,63,94,0.18)"}
+            onMouseLeave={e => e.currentTarget.style.background="var(--red-bg)"}
+          >
+            ← Отменить
+          </button>
+        )}
+      </div>
+      {showLog && todayWater.log.length > 0 && (
+        <div className="expand-down" style={{ borderTop:"1px solid var(--border)", padding:"10px 16px 14px", display:"flex", flexDirection:"column", gap:6 }}>
+          {[...todayWater.log].reverse().map((entry, i) => (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", fontSize:13 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ fontSize:10, color:"var(--text3)", fontFamily:"var(--mono)" }}>{entry.time}</span>
+                <div style={{ width:1, height:10, background:"var(--border2)" }}/>
+                <span style={{ color:"var(--text2)" }}>порция</span>
+              </div>
+              <span style={{ color:"var(--blue)", fontWeight:700, fontFamily:"var(--mono)" }}>+{entry.amount} мл</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── СТРАНИЦА: СЕГОДНЯ ────────────────────────────────────────────────────────
+
+function TodayPage({ routine, weightHistory, nutrition, workouts, completions, setCompletions, goals, waterGoal, waterData, setWaterData }) {
+  const [expanded, setExpanded] = useState({});
+  const todayKey = today();
+  const wdKey = todayWeekdayKey();
+  const wdName = WEEKDAYS_FULL[wdKey];
+  const todayNutrition = nutrition[wdName] || {};
+  const todayWorkout = workouts[wdName] || null;
+  const todayCompletions = completions[todayKey] || {};
 
   const sortedTasks = useMemo(() => [...routine].sort((a,b) => a.time.localeCompare(b.time)), [routine]);
   const completed = sortedTasks.filter(t => todayCompletions[t.id]).length;
@@ -401,26 +622,20 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
   const trend = diff === null ? "—" : diff < -0.1 ? "Снижение" : diff > 0.1 ? "Набор" : "Поддержание";
   const trendColor = diff === null ? "accent" : diff < -0.1 ? "green" : diff > 0.1 ? "red" : "amber";
 
-  // Только выполненные meal-задачи учитываются в калориях и БЖУ
   const completedMealTypes = useMemo(() => {
     const types = new Set();
     sortedTasks.forEach(task => {
-      if (task.type === "meal" && todayCompletions[task.id]) {
-        types.add(task.mealType);
-      }
+      if (task.type === "meal" && todayCompletions[task.id]) types.add(task.mealType);
     });
     return types;
   }, [sortedTasks, todayCompletions]);
 
   const mealCals = MEAL_TYPES.reduce((acc, mt) => {
-    acc[mt] = (completedMealTypes.has(mt) && todayNutrition[mt])
-      ? calcMealCal(todayNutrition[mt].items)
-      : 0;
+    acc[mt] = (completedMealTypes.has(mt) && todayNutrition[mt]) ? calcMealCal(todayNutrition[mt].items) : 0;
     return acc;
   }, {});
   const totalCal = Object.values(mealCals).reduce((s,v)=>s+v,0);
 
-  // Суммарные макронутриенты — только по выполненным приёмам пищи
   const totalMacros = MEAL_TYPES.reduce((acc, mt) => {
     if (!completedMealTypes.has(mt)) return acc;
     const m = todayNutrition[mt];
@@ -458,7 +673,6 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
 
   const mealEmojis = { "Завтрак":"🌅","Обед":"☀️","Перекус":"🍎","Ужин":"🌙" };
 
-  // Прогресс-бар
   function MacroBar({ label, current, goal, color }) {
     const pct = goal > 0 ? Math.min(100, Math.round(current / goal * 100)) : 0;
     const colors = { green: "var(--green)", accent: "var(--accent)", amber: "var(--amber)", blue: "var(--blue)" };
@@ -469,7 +683,7 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
           <span style={{ fontSize:11, fontWeight:600 }}>{current}{goal > 0 ? <span style={{color:"var(--text3)"}}>/{goal}</span> : ""} г</span>
         </div>
         <div style={{ background:"var(--bg3)", borderRadius:4, height:5, overflow:"hidden" }}>
-          <div style={{ width:`${pct}%`, height:"100%", background:colors[color]||colors.accent, borderRadius:4, transition:"width 0.4s ease" }}/>
+          <div style={{ width:`${pct}%`, height:"100%", background:colors[color]||colors.accent, borderRadius:4, transition:"width 0.6s cubic-bezier(0.22,1,0.36,1)" }}/>
         </div>
       </div>
     );
@@ -477,15 +691,12 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
 
   return (
     <div className="fade-in" style={{ padding:"0 0 100px" }}>
-      {/* Шапка */}
       <div className="page-header">
         <p style={{ color:"var(--text3)", fontSize:12, fontWeight:500, letterSpacing:"0.06em", textTransform:"uppercase", fontFamily:"var(--mono)" }}>{todayLabel()}</p>
         <h1 style={{ fontSize:26, fontWeight:700, letterSpacing:"-0.03em", marginTop:4, lineHeight:1.1 }}>Сегодня</h1>
       </div>
 
-      {/* Виджеты сверху */}
       <div style={{ padding:"16px 20px 0", display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-        {/* Вес */}
         <div className="card-hover" style={{ background:"var(--card)", borderRadius:"var(--radius)", padding:"14px 16px", border:"1px solid var(--border)" }}>
           <p style={{ color:"var(--text3)", fontSize:10, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:8 }}>ВЕС</p>
           <p className="mono" style={{ fontSize:24, fontWeight:500, letterSpacing:"-0.02em", lineHeight:1 }}>
@@ -506,7 +717,6 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
           {diff !== null && <div style={{ marginTop:4 }}><Tag color={trendColor}>{trend}</Tag></div>}
         </div>
 
-        {/* Прогресс задач */}
         <div className="card-hover" style={{ background:"var(--card)", borderRadius:"var(--radius)", padding:"14px 16px", border:"1px solid var(--border)" }}>
           <p style={{ color:"var(--text3)", fontSize:10, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:8 }}>ЗАДАЧИ</p>
           <p className="mono" style={{ fontSize:24, fontWeight:500, lineHeight:1 }}>
@@ -514,7 +724,7 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
             <span style={{ color:"var(--text3)", fontWeight:400, fontSize:18 }}>/{sortedTasks.length}</span>
           </p>
           <div style={{ marginTop:10, background:"var(--bg3)", borderRadius:99, height:3, overflow:"hidden" }}>
-            <div className="bar-fill" style={{ width:`${sortedTasks.length ? Math.round(completed/sortedTasks.length*100) : 0}%`, background:"var(--accent)" }}/>
+            <div className="bar-fill" style={{ width:`${sortedTasks.length ? Math.round(completed/sortedTasks.length*100) : 0}%`, background:"linear-gradient(90deg, var(--accent), var(--accent2))" }}/>
           </div>
           <p style={{ color:"var(--text3)", fontSize:11, marginTop:5 }}>
             {sortedTasks.length ? Math.round(completed/sortedTasks.length*100) : 0}% выполнено
@@ -522,9 +732,8 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
         </div>
       </div>
 
-      {/* Калории + БЖУ */}
+      {/* Калории + БЖУ (без нижних 3 ячеек) */}
       <div style={{ margin:"10px 20px 0", background:"var(--card)", borderRadius:"var(--radius)", padding:"16px", border:"1px solid var(--border)" }}>
-        {/* Заголовок с калориями */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
           <p style={{ color:"var(--text3)", fontSize:10, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase" }}>СЪЕДЕНО СЕГОДНЯ</p>
           <div style={{ display:"flex", alignItems:"center", gap:5 }}>
@@ -535,13 +744,11 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
               : <span style={{ color:"var(--text3)", fontSize:12 }}>ккал</span>}
           </div>
         </div>
-        {/* Прогресс калорий */}
         {goals.calories > 0 && (
           <div style={{ background:"var(--bg3)", borderRadius:99, height:4, overflow:"hidden", marginBottom:14 }}>
-            <div className="bar-fill" style={{ width:`${Math.min(100, Math.round(totalCal/goals.calories*100))}%`, background: totalCal > goals.calories ? "var(--red)" : "var(--accent)" }}/>
+            <div className="bar-fill" style={{ width:`${Math.min(100, Math.round(totalCal/goals.calories*100))}%`, background: totalCal > goals.calories ? "var(--red)" : "linear-gradient(90deg, var(--accent), var(--accent2))" }}/>
           </div>
         )}
-        {/* По приёмам */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6, marginBottom:14 }}>
           {MEAL_TYPES.map(mt => (
             <div key={mt} style={{ textAlign:"center", background:"var(--bg3)", borderRadius:10, padding:"8px 4px" }}>
@@ -550,24 +757,14 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
             </div>
           ))}
         </div>
-        {/* БЖУ */}
+        {/* БЖУ прогресс-бары (без нижних 3 числовых ячеек) */}
         <div style={{ borderTop:"1px solid var(--border)", paddingTop:12, display:"flex", flexDirection:"column", gap:9 }}>
           <MacroBar label="Белки" current={totalMacros.protein} goal={goals.protein} color="green"/>
           <MacroBar label="Жиры"  current={totalMacros.fat}     goal={goals.fat}     color="amber"/>
           <MacroBar label="Углеводы" current={totalMacros.carbs} goal={goals.carbs}  color="blue"/>
         </div>
-        {/* Цифры БЖУ крупно */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginTop:12 }}>
-          {[["Белки", totalMacros.protein, "var(--green)"], ["Жиры", totalMacros.fat, "var(--amber)"], ["Углеводы", totalMacros.carbs, "var(--blue)"]].map(([l,v,c]) => (
-            <div key={l} style={{ textAlign:"center", background:"var(--bg3)", borderRadius:10, padding:"10px 4px" }}>
-              <p className="mono" style={{ fontWeight:600, fontSize:18, color:c, lineHeight:1 }}>{v}</p>
-              <p style={{ fontSize:10, color:"var(--text3)", marginTop:4, fontWeight:600, letterSpacing:"0.05em" }}>{l.toUpperCase()}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* Тренировка */}
       {todayWorkout && (
         <div style={{ margin:"12px 20px 0", background:"var(--card)", borderRadius:"var(--radius)", padding:"14px 16px", border:"1px solid var(--border)" }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -581,91 +778,31 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
         </div>
       )}
 
-      {/* Вода */}
-      <div style={{ margin:"12px 20px 0", background:"var(--card)", borderRadius:"var(--radius)", padding:"14px 16px", border:"1px solid var(--border)" }}>
-        {/* Заголовок */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <span style={{ color:"var(--blue)", display:"flex" }}><Icons.Droplet/></span>
-            <p style={{ color:"var(--text2)", fontSize:12, fontWeight:500 }}>ВОДА СЕГОДНЯ</p>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-            <span style={{ fontWeight:700, fontSize:16, color:"var(--blue)" }}>{todayWater.total}</span>
-            <span style={{ color:"var(--text3)", fontSize:13 }}>/ {waterGoal} мл</span>
-          </div>
-        </div>
-        {/* Прогресс-бар */}
-        <div style={{ background:"var(--bg3)", borderRadius:6, height:8, overflow:"hidden", marginBottom:12 }}>
-          <div style={{ width:`${waterGoal > 0 ? Math.min(100, Math.round(todayWater.total / waterGoal * 100)) : 0}%`, height:"100%", background:"var(--blue)", borderRadius:6, transition:"width 0.4s ease" }}/>
-        </div>
-        {/* Кнопки добавления */}
-        <div style={{ display:"flex", gap:8, marginBottom:10 }}>
-          {[250, 500].map(ml => (
-            <button key={ml} onClick={() => addWater(ml)} style={{ flex:1, background:"var(--blue-bg)", border:"1px solid rgba(96,165,250,0.25)", borderRadius:10, padding:"9px 0", color:"var(--blue)", fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:"var(--font)" }}>
-              +{ml} мл
-            </button>
-          ))}
-          <div style={{ flex:1, display:"flex", gap:6 }}>
-            <input
-              type="number"
-              value={customWater}
-              onChange={e => setCustomWater(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && addCustomWater()}
-              placeholder="мл"
-              style={{ flex:1, padding:"9px 10px", fontSize:14, borderRadius:10, border:"1px solid var(--border2)", background:"var(--bg3)", color:"var(--text)", width:0 }}
-            />
-            <button onClick={addCustomWater} style={{ background:"var(--blue-bg)", border:"1px solid rgba(96,165,250,0.25)", borderRadius:10, padding:"9px 12px", color:"var(--blue)", fontWeight:700, cursor:"pointer", fontFamily:"var(--font)", fontSize:14 }}>+</button>
-          </div>
-        </div>
-        {/* Лог и кнопка удалить последнее */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <button onClick={() => setShowWaterLog(p => !p)} style={{ background:"none", border:"none", color:"var(--text3)", fontSize:12, cursor:"pointer", fontFamily:"var(--font)", display:"flex", alignItems:"center", gap:4 }}>
-            {showWaterLog ? <Icons.ChevronUp/> : <Icons.ChevronDown/>}
-            {todayWater.log.length} записей
-          </button>
-          {todayWater.log.length > 0 && (
-            <button onClick={removeLastWater} style={{ background:"var(--red-bg)", border:"none", borderRadius:6, padding:"4px 10px", color:"var(--red)", fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"var(--font)" }}>
-              ← Отменить
-            </button>
-          )}
-        </div>
-        {showWaterLog && todayWater.log.length > 0 && (
-          <div className="fade-in" style={{ borderTop:"1px solid var(--border)", marginTop:10, paddingTop:10, display:"flex", flexDirection:"column", gap:4 }}>
-            {[...todayWater.log].reverse().map((entry, i) => (
-              <div key={i} style={{ display:"flex", justifyContent:"space-between", fontSize:13 }}>
-                <span style={{ color:"var(--text3)" }}>{entry.time}</span>
-                <span style={{ color:"var(--blue)", fontWeight:600 }}>+{entry.amount} мл</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Красивый виджет воды */}
+      <WaterWidget waterData={waterData} setWaterData={setWaterData} waterGoal={waterGoal} />
 
-      {/* Таймлайн */}
       <div style={{ padding:"20px 20px 0" }}>
         <h2 style={{ fontWeight:600, fontSize:16, marginBottom:14, color:"var(--text2)" }}>РАСПИСАНИЕ</h2>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {sortedTasks.map((task, i) => {
+          {sortedTasks.map((task) => {
             const done = todayCompletions[task.id];
             const exp = expanded[task.id];
             const { subtitle, detail } = taskContent(task);
             return (
-              <div key={task.id} className="fade-in" style={{ background: done ? "rgba(52,211,153,0.07)" : "var(--card)", borderRadius:"var(--radius)", border:`1px solid ${done ? "rgba(52,211,153,0.2)" : "var(--border)"}`, overflow:"hidden", transition:"all 0.2s" }}>
+              <div key={task.id} className="fade-in" style={{ background: done ? "rgba(16,185,129,0.06)" : "var(--card)", borderRadius:"var(--radius)", border:`1px solid ${done ? "rgba(16,185,129,0.2)" : "var(--border)"}`, overflow:"hidden", transition:"all 0.2s ease" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 14px" }}>
-                  <button onClick={() => toggleDone(task.id)} style={{ minWidth:26, height:26, borderRadius:8, border: done ? "none" : "2px solid var(--border2)", background: done ? "var(--green)" : "transparent", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all 0.15s", flexShrink:0 }}>
+                  <button onClick={() => toggleDone(task.id)} style={{ minWidth:26, height:26, borderRadius:8, border: done ? "none" : "2px solid var(--border2)", background: done ? "var(--green)" : "transparent", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all 0.18s cubic-bezier(0.22,1,0.36,1)", flexShrink:0 }}>
                     {done && <span className="check-pop" style={{color:"#000"}}><Icons.Check/></span>}
                   </button>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                      <span style={{ fontWeight:600, fontSize:14, opacity: done ? 0.5 : 1 }}>{task.title}</span>
-                    </div>
+                    <span style={{ fontWeight:600, fontSize:14, opacity: done ? 0.5 : 1 }}>{task.title}</span>
                     <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:2 }}>
                       <span style={{ fontSize:12, color:"var(--text3)", fontWeight:600 }}>{task.time}</span>
                       {subtitle && <span style={{ fontSize:12, color:"var(--text2)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{subtitle}</span>}
                     </div>
                   </div>
                   {(task.type !== "generic" || detail) && (
-                    <button onClick={() => toggleExpand(task.id)} style={{ background:"var(--bg3)", border:"none", borderRadius:6, padding:"4px 6px", color:"var(--text2)", display:"flex", cursor:"pointer" }}>
+                    <button onClick={() => toggleExpand(task.id)} style={{ background:"var(--bg3)", border:"none", borderRadius:6, padding:"4px 6px", color:"var(--text2)", display:"flex", cursor:"pointer", transition:"all 0.15s" }}>
                       {exp ? <Icons.ChevronUp/> : <Icons.ChevronDown/>}
                     </button>
                   )}
@@ -689,9 +826,12 @@ function TodayPage({ routine, weightHistory, nutrition, workouts, completions, s
     </div>
   );
 }
+
+// ─── СТРАНИЦА: ПИТАНИЕ ────────────────────────────────────────────────────────
+
 function NutritionPage({ nutrition, setNutrition }) {
   const [activeDay, setActiveDay] = useState(todayWeekdayKey());
-  const [editModal, setEditModal] = useState(null); // { day, mealType, itemIndex? }
+  const [editModal, setEditModal] = useState(null);
   const [foodSearch, setFoodSearch] = useState("");
   const [selectedFood, setSelectedFood] = useState(null);
   const [gramsInput, setGramsInput] = useState("");
@@ -701,14 +841,12 @@ function NutritionPage({ nutrition, setNutrition }) {
   const dayName = WEEKDAYS_FULL[activeDay];
   const dayData = nutrition[dayName] || {};
 
-  // Поиск по базе продуктов
   const searchResults = useMemo(() => {
     if (!foodSearch.trim()) return [];
     const q = foodSearch.toLowerCase();
     return FOODS_DB.filter(f => f.name.toLowerCase().includes(q)).slice(0, 8);
   }, [foodSearch]);
 
-  // Авторасчёт макросов при выборе продукта и вводе граммов
   const preview = useMemo(() => {
     if (!selectedFood || !gramsInput) return null;
     const g = parseFloat(gramsInput);
@@ -723,60 +861,30 @@ function NutritionPage({ nutrition, setNutrition }) {
   }, [selectedFood, gramsInput]);
 
   function openAddItem(mealType) {
-    setSelectedFood(null);
-    setFoodSearch("");
-    setGramsInput("");
-    setShowDropdown(false);
+    setSelectedFood(null); setFoodSearch(""); setGramsInput(""); setShowDropdown(false);
     setEditModal({ day: dayName, mealType, itemIndex: null });
   }
-
   function openEditItem(mealType, idx) {
     const item = dayData[mealType].items[idx];
-    // При редактировании показываем существующие данные
-    const food = FOODS_DB.find(f => f.name === item.name) || {
-      name: item.name,
-      calories: item.calories ?? item.caloriesPer100g ?? 0,
-      protein: item.protein ?? 0,
-      fat: item.fat ?? 0,
-      carbs: item.carbs ?? 0,
-    };
-    setSelectedFood(food);
-    setFoodSearch(item.name);
-    setGramsInput(String(item.grams));
-    setShowDropdown(false);
+    const food = FOODS_DB.find(f => f.name === item.name) || { name: item.name, calories: item.calories ?? item.caloriesPer100g ?? 0, protein: item.protein ?? 0, fat: item.fat ?? 0, carbs: item.carbs ?? 0 };
+    setSelectedFood(food); setFoodSearch(item.name); setGramsInput(String(item.grams)); setShowDropdown(false);
     setEditModal({ day: dayName, mealType, itemIndex: idx });
   }
-
   function saveItem() {
     if (!selectedFood || !gramsInput) return;
     const g = parseFloat(gramsInput);
     if (!g || g <= 0) return;
-    const k = g / 100;
-    const newItem = {
-      id: uid(),
-      name:     selectedFood.name,
-      grams:    g,
-      calories: selectedFood.calories,
-      protein:  selectedFood.protein,
-      fat:      selectedFood.fat,
-      carbs:    selectedFood.carbs,
-      // backward compat
-      caloriesPer100g: selectedFood.calories,
-    };
+    const newItem = { id: uid(), name: selectedFood.name, grams: g, calories: selectedFood.calories, protein: selectedFood.protein, fat: selectedFood.fat, carbs: selectedFood.carbs, caloriesPer100g: selectedFood.calories };
     setNutrition(prev => {
       const updated = JSON.parse(JSON.stringify(prev));
       if (!updated[editModal.day]) updated[editModal.day] = {};
       if (!updated[editModal.day][editModal.mealType]) updated[editModal.day][editModal.mealType] = { items: [] };
-      if (editModal.itemIndex !== null) {
-        updated[editModal.day][editModal.mealType].items[editModal.itemIndex] = newItem;
-      } else {
-        updated[editModal.day][editModal.mealType].items.push(newItem);
-      }
+      if (editModal.itemIndex !== null) updated[editModal.day][editModal.mealType].items[editModal.itemIndex] = newItem;
+      else updated[editModal.day][editModal.mealType].items.push(newItem);
       return updated;
     });
     setEditModal(null);
   }
-
   function deleteItem(mealType, idx) {
     setNutrition(prev => {
       const updated = JSON.parse(JSON.stringify(prev));
@@ -789,16 +897,12 @@ function NutritionPage({ nutrition, setNutrition }) {
   const mealColors = { "Завтрак":"blue","Обед":"green","Перекус":"amber","Ужин":"accent" };
   const mealEmojis = { "Завтрак":"🌅","Обед":"☀️","Перекус":"🍎","Ужин":"🌙" };
 
-  // Итого за день
   const dayTotals = useMemo(() => {
     return MEAL_TYPES.reduce((acc, mt) => {
       const m = dayData[mt];
       if (!m) return acc;
       const macro = calcMealMacros(m.items);
-      acc.calories += macro.calories;
-      acc.protein  += macro.protein;
-      acc.fat      += macro.fat;
-      acc.carbs    += macro.carbs;
+      acc.calories += macro.calories; acc.protein += macro.protein; acc.fat += macro.fat; acc.carbs += macro.carbs;
       return acc;
     }, { calories: 0, protein: 0, fat: 0, carbs: 0 });
   }, [dayData]);
@@ -809,20 +913,16 @@ function NutritionPage({ nutrition, setNutrition }) {
         <h1 style={{ fontSize:24, fontWeight:700 }}>Питание</h1>
         <p style={{ color:"var(--text2)", fontSize:14, marginTop:2 }}>Недельный план питания</p>
       </div>
-
-      {/* Дни недели */}
       <div style={{ overflowX:"auto", padding:"14px 20px 0" }} className="scroll-hide">
         <div style={{ display:"flex", gap:8, width:"max-content" }}>
           {WEEKDAYS.map((d,i) => (
-            <button key={i} onClick={() => setActiveDay(i)} style={{ background: activeDay===i ? "var(--accent)" : "var(--card)", border: activeDay===i ? "none" : "1px solid var(--border)", borderRadius:10, padding:"8px 14px", color: activeDay===i ? "#fff" : "var(--text2)", fontWeight:600, fontSize:14, cursor:"pointer", transition:"all 0.15s", flexShrink:0, position:"relative" }}>
+            <button key={i} onClick={() => setActiveDay(i)} style={{ background: activeDay===i ? "linear-gradient(135deg, var(--accent), #9b8ff8)" : "var(--card)", border: activeDay===i ? "none" : "1px solid var(--border)", borderRadius:10, padding:"8px 14px", color: activeDay===i ? "#fff" : "var(--text2)", fontWeight:600, fontSize:14, cursor:"pointer", transition:"all 0.2s cubic-bezier(0.22,1,0.36,1)", flexShrink:0, position:"relative", boxShadow: activeDay===i ? "0 2px 12px rgba(124,106,245,0.3)" : "none" }}>
               {d}
               {i===todayWeekdayKey() && <span style={{ position:"absolute", top:3, right:3, width:5, height:5, borderRadius:"50%", background: activeDay===i ? "#fff" : "var(--accent)" }}/>}
             </button>
           ))}
         </div>
       </div>
-
-      {/* Итого за день */}
       <div style={{ margin:"12px 20px 0", background:"var(--card)", borderRadius:12, padding:"14px 16px", border:"1px solid var(--border)" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
           <span style={{ color:"var(--text2)", fontSize:13, fontWeight:500 }}>{WEEKDAYS_FULL[activeDay]}</span>
@@ -842,8 +942,6 @@ function NutritionPage({ nutrition, setNutrition }) {
           ))}
         </div>
       </div>
-
-      {/* Приёмы пищи */}
       <div style={{ padding:"12px 20px 0", display:"flex", flexDirection:"column", gap:10 }}>
         {MEAL_TYPES.map(mt => {
           const meal = dayData[mt] || { items: [] };
@@ -861,7 +959,7 @@ function NutritionPage({ nutrition, setNutrition }) {
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                   <Tag color={mealColors[mt]}>{macros.calories} ккал</Tag>
-                  {exp ? <Icons.ChevronUp/> : <Icons.ChevronDown/>}
+                  <div style={{ transition:"transform 0.2s ease", transform: exp ? "rotate(180deg)" : "rotate(0deg)" }}><Icons.ChevronDown/></div>
                 </div>
               </div>
               {exp && (
@@ -879,7 +977,7 @@ function NutritionPage({ nutrition, setNutrition }) {
                         </div>
                         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                           <span style={{ fontWeight:600, fontSize:14, color:"var(--accent2)" }}>{cal} ккал</span>
-                          <button onClick={() => openEditItem(mt, idx)} style={{ background:"var(--card2)", border:"none", borderRadius:6, padding:"5px 7px", color:"var(--text2)", cursor:"pointer", display:"flex" }}><Icons.Edit/></button>
+                          <button onClick={() => openEditItem(mt, idx)} style={{ background:"var(--card2)", border:"none", borderRadius:6, padding:"5px 7px", color:"var(--text2)", cursor:"pointer", display:"flex", transition:"all 0.15s" }}><Icons.Edit/></button>
                         </div>
                       </div>
                     );
@@ -893,58 +991,29 @@ function NutritionPage({ nutrition, setNutrition }) {
           );
         })}
       </div>
-
-      {/* Модал добавления/редактирования */}
       <Modal open={!!editModal} onClose={() => setEditModal(null)} title={editModal?.itemIndex !== null ? "Редактировать продукт" : "Добавить продукт"}>
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-
-          {/* Поиск продукта */}
           <div style={{ position:"relative" }}>
             <label style={{ fontSize:13, color:"var(--text2)", display:"block", marginBottom:4 }}>Продукт</label>
-            <input
-              value={foodSearch}
-              onChange={e => { setFoodSearch(e.target.value); setShowDropdown(true); if (!e.target.value) setSelectedFood(null); }}
-              onFocus={() => setShowDropdown(true)}
-              placeholder="Введите название продукта..."
-            />
+            <input value={foodSearch} onChange={e => { setFoodSearch(e.target.value); setShowDropdown(true); if (!e.target.value) setSelectedFood(null); }} onFocus={() => setShowDropdown(true)} placeholder="Введите название продукта..."/>
             {showDropdown && searchResults.length > 0 && (
-              <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:"var(--radius-sm)", zIndex:200, maxHeight:220, overflowY:"auto", marginTop:4 }} className="scroll-hide">
+              <div className="dropdown-list" style={{ position:"absolute", top:"100%", left:0, right:0, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:"var(--radius-sm)", zIndex:200, maxHeight:220, overflowY:"auto", marginTop:4 }} className="scroll-hide">
                 {searchResults.map(food => (
-                  <div
-                    key={food.name}
-                    onClick={() => { setSelectedFood(food); setFoodSearch(food.name); setShowDropdown(false); }}
-                    style={{ padding:"10px 14px", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
-                    onMouseEnter={e => e.currentTarget.style.background="var(--card2)"}
-                    onMouseLeave={e => e.currentTarget.style.background="transparent"}
-                  >
+                  <div key={food.name} className="dropdown-item" onClick={() => { setSelectedFood(food); setFoodSearch(food.name); setShowDropdown(false); }} style={{ padding:"10px 14px", cursor:"pointer", borderBottom:"1px solid var(--border)" }}>
                     <p style={{ fontWeight:500, fontSize:14 }}>{food.name}</p>
-                    <p style={{ fontSize:11, color:"var(--text3)" }}>
-                      {food.calories} ккал · Б:{food.protein} Ж:{food.fat} У:{food.carbs} (на 100г)
-                    </p>
+                    <p style={{ fontSize:11, color:"var(--text3)" }}>{food.calories} ккал · Б:{food.protein} Ж:{food.fat} У:{food.carbs} (на 100г)</p>
                   </div>
                 ))}
               </div>
             )}
           </div>
-
-          {/* Только граммы */}
           <div>
             <label style={{ fontSize:13, color:"var(--text2)", display:"block", marginBottom:4 }}>Количество (граммы)</label>
-            <input
-              type="number"
-              value={gramsInput}
-              onChange={e => setGramsInput(e.target.value)}
-              placeholder="250"
-              min="1"
-            />
+            <input type="number" value={gramsInput} onChange={e => setGramsInput(e.target.value)} placeholder="250" min="1"/>
           </div>
-
-          {/* Предпросмотр авторасчёта */}
           {selectedFood && (
             <div style={{ background:"var(--bg3)", borderRadius:8, padding:"10px 12px", fontSize:13 }}>
-              <p style={{ color:"var(--text2)", marginBottom:6, fontWeight:500 }}>
-                {selectedFood.name} — на 100г: {selectedFood.calories} ккал · Б:{selectedFood.protein} Ж:{selectedFood.fat} У:{selectedFood.carbs}
-              </p>
+              <p style={{ color:"var(--text2)", marginBottom:6, fontWeight:500 }}>{selectedFood.name} — на 100г: {selectedFood.calories} ккал · Б:{selectedFood.protein} Ж:{selectedFood.fat} У:{selectedFood.carbs}</p>
               {preview && (
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6 }}>
                   {[["Ккал", preview.calories, "var(--accent2)"], ["Белки", preview.protein+"г", "var(--green)"], ["Жиры", preview.fat+"г", "var(--amber)"], ["Углев.", preview.carbs+"г", "var(--blue)"]].map(([l,v,c]) => (
@@ -957,14 +1026,9 @@ function NutritionPage({ nutrition, setNutrition }) {
               )}
             </div>
           )}
-
           <div style={{ display:"flex", gap:10, marginTop:4 }}>
-            {editModal?.itemIndex !== null && (
-              <Btn variant="danger" onClick={() => deleteItem(editModal.mealType, editModal.itemIndex)}><Icons.Trash/> Удалить</Btn>
-            )}
-            <Btn onClick={saveItem} style={{ flex:1, justifyContent:"center" }} disabled={!selectedFood || !gramsInput}>
-              Сохранить
-            </Btn>
+            {editModal?.itemIndex !== null && <Btn variant="danger" onClick={() => deleteItem(editModal.mealType, editModal.itemIndex)}><Icons.Trash/> Удалить</Btn>}
+            <Btn onClick={saveItem} style={{ flex:1, justifyContent:"center" }} disabled={!selectedFood || !gramsInput}>Сохранить</Btn>
           </div>
         </div>
       </Modal>
@@ -976,7 +1040,6 @@ function NutritionPage({ nutrition, setNutrition }) {
 
 function WorkoutsPage({ workouts, setWorkouts }) {
   const [activeDay, setActiveDay] = useState(todayWeekdayKey());
-  const [expandedDay, setExpandedDay] = useState({});
   const [editModal, setEditModal] = useState(null);
   const [workoutForm, setWorkoutForm] = useState({ name:"", notes:"", exercises:[] });
   const [exForm, setExForm] = useState({ name:"", sets:"", reps:"" });
@@ -989,10 +1052,7 @@ function WorkoutsPage({ workouts, setWorkouts }) {
     else setWorkoutForm({ name:"", notes:"", exercises:[] });
     setEditModal(dayName);
   }
-  function saveWorkout() {
-    setWorkouts(p => ({ ...p, [editModal]: workoutForm.name ? workoutForm : null }));
-    setEditModal(null);
-  }
+  function saveWorkout() { setWorkouts(p => ({ ...p, [editModal]: workoutForm.name ? workoutForm : null })); setEditModal(null); }
   function addEx() {
     if (!exForm.name) return;
     setWorkoutForm(p => ({ ...p, exercises: [...p.exercises, { id:uid(), ...exForm, sets:parseInt(exForm.sets)||3, reps:parseInt(exForm.reps)||10 }] }));
@@ -1006,19 +1066,16 @@ function WorkoutsPage({ workouts, setWorkouts }) {
         <h1 style={{ fontSize:24, fontWeight:700 }}>Тренировки</h1>
         <p style={{ color:"var(--text2)", fontSize:14, marginTop:2 }}>Недельный план тренировок</p>
       </div>
-
-      {/* Дни */}
       <div style={{ overflowX:"auto", padding:"14px 20px 0" }} className="scroll-hide">
         <div style={{ display:"flex", gap:8, width:"max-content" }}>
           {WEEKDAYS.map((d,i) => (
-            <button key={i} onClick={() => setActiveDay(i)} style={{ background: activeDay===i ? "var(--accent)" : "var(--card)", border: activeDay===i ? "none" : "1px solid var(--border)", borderRadius:10, padding:"8px 14px", color: activeDay===i ? "#fff" : "var(--text2)", fontWeight:600, fontSize:14, cursor:"pointer", transition:"all 0.15s", flexShrink:0, position:"relative" }}>
+            <button key={i} onClick={() => setActiveDay(i)} style={{ background: activeDay===i ? "linear-gradient(135deg, var(--accent), #9b8ff8)" : "var(--card)", border: activeDay===i ? "none" : "1px solid var(--border)", borderRadius:10, padding:"8px 14px", color: activeDay===i ? "#fff" : "var(--text2)", fontWeight:600, fontSize:14, cursor:"pointer", transition:"all 0.2s cubic-bezier(0.22,1,0.36,1)", flexShrink:0, position:"relative", boxShadow: activeDay===i ? "0 2px 12px rgba(124,106,245,0.3)" : "none" }}>
               {d}
               {i===todayWeekdayKey() && <span style={{ position:"absolute", top:3, right:3, width:5, height:5, borderRadius:"50%", background: activeDay===i ? "#fff" : "var(--accent)" }}/>}
             </button>
           ))}
         </div>
       </div>
-
       <div style={{ padding:"16px 20px 0" }}>
         {workout ? (
           <div style={{ background:"var(--card)", borderRadius:"var(--radius)", border:"1px solid var(--border)", overflow:"hidden" }}>
@@ -1029,9 +1086,7 @@ function WorkoutsPage({ workouts, setWorkouts }) {
                   <p style={{ color:"var(--text2)", fontSize:14, marginTop:2 }}>{workout.exercises.length} упражнений</p>
                   {workout.notes && <p style={{ color:"var(--text3)", fontSize:13, marginTop:4 }}>{workout.notes}</p>}
                 </div>
-                <div style={{ display:"flex", gap:8 }}>
-                  <Btn variant="secondary" small onClick={openEdit}><Icons.Edit/></Btn>
-                </div>
+                <Btn variant="secondary" small onClick={openEdit}><Icons.Edit/></Btn>
               </div>
             </div>
             <div style={{ borderTop:"1px solid var(--border)" }}>
@@ -1056,36 +1111,27 @@ function WorkoutsPage({ workouts, setWorkouts }) {
           </div>
         )}
       </div>
-
-      {/* Обзор недели */}
       <div style={{ padding:"20px 20px 0" }}>
         <h2 style={{ fontWeight:600, fontSize:15, color:"var(--text2)", marginBottom:12 }}>НЕДЕЛЯ</h2>
         <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
           {WEEKDAYS.map((d,i) => {
             const w = workouts[WEEKDAYS_FULL[i]];
             return (
-              <div key={i} onClick={() => setActiveDay(i)} style={{ display:"flex", alignItems:"center", padding:"11px 14px", background: activeDay===i ? "var(--accent-bg)" : "var(--card)", borderRadius:10, border:`1px solid ${activeDay===i ? "rgba(124,106,245,0.3)" : "var(--border)"}`, cursor:"pointer", transition:"all 0.15s" }}>
+              <div key={i} onClick={() => setActiveDay(i)} style={{ display:"flex", alignItems:"center", padding:"11px 14px", background: activeDay===i ? "var(--accent-bg)" : "var(--card)", borderRadius:10, border:`1px solid ${activeDay===i ? "rgba(124,106,245,0.3)" : "var(--border)"}`, cursor:"pointer", transition:"all 0.18s ease" }}>
                 <span style={{ minWidth:28, fontWeight:700, color: activeDay===i ? "var(--accent2)" : "var(--text3)", fontSize:13 }}>{d}</span>
-                {w ? (
-                  <>
-                    <span style={{ flex:1, fontWeight:500, fontSize:14, color: activeDay===i ? "var(--text)" : "var(--text)" }}>{w.name}</span>
-                    <Tag color="accent">{w.exercises.length} упр.</Tag>
-                  </>
-                ) : <span style={{ color:"var(--text3)", fontSize:13 }}>Отдых</span>}
+                {w ? (<><span style={{ flex:1, fontWeight:500, fontSize:14 }}>{w.name}</span><Tag color="accent">{w.exercises.length} упр.</Tag></>) : <span style={{ color:"var(--text3)", fontSize:13 }}>Отдых</span>}
               </div>
             );
           })}
         </div>
       </div>
-
-      {/* Модал */}
       <Modal open={!!editModal} onClose={() => setEditModal(null)} title={`Тренировка — ${editModal}`}>
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
           <div><label style={{ fontSize:13, color:"var(--text2)", display:"block", marginBottom:4 }}>Название</label><input value={workoutForm.name} onChange={e=>setWorkoutForm(p=>({...p,name:e.target.value}))} placeholder="Грудь + Трицепс"/></div>
           <div><label style={{ fontSize:13, color:"var(--text2)", display:"block", marginBottom:4 }}>Заметки</label><input value={workoutForm.notes} onChange={e=>setWorkoutForm(p=>({...p,notes:e.target.value}))} placeholder="Необязательно"/></div>
           <div style={{ borderTop:"1px solid var(--border)", paddingTop:12 }}>
             <p style={{ fontWeight:600, fontSize:14, marginBottom:10 }}>Упражнения</p>
-            {workoutForm.exercises.map((ex,i) => (
+            {workoutForm.exercises.map((ex) => (
               <div key={ex.id} style={{ display:"flex", alignItems:"center", padding:"8px 12px", background:"var(--bg3)", borderRadius:8, marginBottom:6, gap:8 }}>
                 <span style={{ flex:1, fontSize:14 }}>{ex.name}</span>
                 <span style={{ color:"var(--text2)", fontSize:13 }}>{ex.sets}×{ex.reps}</span>
@@ -1120,7 +1166,6 @@ function WeightPage({ weightHistory, setWeightHistory }) {
   const todayKey = today();
   const todayEntry = weightHistory.find(e => e.date === todayKey);
   const sorted = [...weightHistory].sort((a,b) => a.date.localeCompare(b.date));
-
   const last = sorted.length ? sorted[sorted.length-1] : null;
   const prev = sorted.length > 1 ? sorted[sorted.length-2] : null;
   const diff = last && prev ? parseFloat((last.weight - prev.weight).toFixed(1)) : null;
@@ -1134,10 +1179,8 @@ function WeightPage({ weightHistory, setWeightHistory }) {
     });
     setWeightInput("");
   }
-
   function deleteEntry(id) { setWeightHistory(p => p.filter(e=>e.id!==id)); }
 
-  // График
   const now = new Date();
   const filtered = sorted.filter(e => {
     const d = new Date(e.date);
@@ -1173,8 +1216,6 @@ function WeightPage({ weightHistory, setWeightHistory }) {
         <h1 style={{ fontSize:24, fontWeight:700 }}>Вес</h1>
         <p style={{ color:"var(--text2)", fontSize:14, marginTop:2 }}>История и прогресс</p>
       </div>
-
-      {/* Карточки */}
       <div style={{ padding:"16px 20px 0", display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
         <div style={{ background:"var(--card)", borderRadius:12, padding:"12px", border:"1px solid var(--border)", textAlign:"center" }}>
           <p style={{ color:"var(--text3)", fontSize:11, fontWeight:600, marginBottom:4 }}>ТЕКУЩИЙ</p>
@@ -1191,8 +1232,6 @@ function WeightPage({ weightHistory, setWeightHistory }) {
           <p style={{ fontWeight:600, fontSize:13, color:trend.color }}>{trend.label}</p>
         </div>
       </div>
-
-      {/* Ввод */}
       <div style={{ margin:"12px 20px 0", background:"var(--card)", borderRadius:"var(--radius)", padding:"16px", border:"1px solid var(--border)" }}>
         <p style={{ fontWeight:600, fontSize:14, marginBottom:10 }}>{todayEntry ? "✏️ Обновить вес" : "➕ Записать вес"}</p>
         {todayEntry && <p style={{ color:"var(--text2)", fontSize:13, marginBottom:10 }}>Сегодня: <strong>{todayEntry.weight} кг</strong></p>}
@@ -1201,38 +1240,27 @@ function WeightPage({ weightHistory, setWeightHistory }) {
           <Btn onClick={saveWeight} style={{ flexShrink:0 }}>Сохранить</Btn>
         </div>
       </div>
-
-      {/* График */}
       {filtered.length > 1 && (
         <div style={{ margin:"12px 20px 0", background:"var(--card)", borderRadius:"var(--radius)", padding:"16px", border:"1px solid var(--border)" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
             <p style={{ fontWeight:600, fontSize:14 }}>График</p>
             <div style={{ display:"flex", gap:6 }}>
               {[["7","7 дней"],["30","30 дней"],["all","Всё"]].map(([v,l]) => (
-                <button key={v} onClick={()=>setFilter(v)} style={{ background:filter===v?"var(--accent)":"var(--bg3)", border:"none", borderRadius:6, padding:"4px 10px", color:filter===v?"#fff":"var(--text2)", fontSize:12, fontWeight:600, cursor:"pointer" }}>{l}</button>
+                <button key={v} onClick={()=>setFilter(v)} style={{ background:filter===v?"linear-gradient(135deg, var(--accent), #9b8ff8)":"var(--bg3)", border:"none", borderRadius:6, padding:"4px 10px", color:filter===v?"#fff":"var(--text2)", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.2s ease" }}>{l}</button>
               ))}
             </div>
           </div>
           <div style={{ overflowX:"auto" }} className="scroll-hide">
             <svg width={chartW} height={chartH} viewBox={`0 0 ${chartW} ${chartH}`} style={{ display:"block", margin:"0 auto" }}>
-              {/* Grid */}
-              {[0,1,2,3,4].map(i => (
-                <line key={i} x1={padX} x2={chartW-padX} y1={padY + (innerH/4)*i} y2={padY + (innerH/4)*i} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-              ))}
-              {/* Path */}
-              <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              {/* Area */}
-              {points.length > 1 && <path d={`${path} L${points[points.length-1].x},${padY+innerH} L${points[0].x},${padY+innerH} Z`} fill="rgba(124,106,245,0.08)"/>}
-              {/* Points */}
-              {points.map((p,i) => (
-                <circle key={i} cx={p.x} cy={p.y} r="4" fill="var(--accent)" stroke="var(--bg2)" strokeWidth="2"/>
-              ))}
+              {[0,1,2,3,4].map(i => <line key={i} x1={padX} x2={chartW-padX} y1={padY+(innerH/4)*i} y2={padY+(innerH/4)*i} stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>)}
+              <path d={path} fill="none" stroke="url(#lineGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <defs><linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="var(--accent)"/><stop offset="100%" stopColor="var(--accent2)"/></linearGradient></defs>
+              {points.length > 1 && <path d={`${path} L${points[points.length-1].x},${padY+innerH} L${points[0].x},${padY+innerH} Z`} fill="rgba(124,106,245,0.07)"/>}
+              {points.map((p,i) => <circle key={i} cx={p.x} cy={p.y} r="4" fill="var(--accent)" stroke="var(--bg2)" strokeWidth="2"/>)}
             </svg>
           </div>
         </div>
       )}
-
-      {/* История */}
       <div style={{ padding:"16px 20px 0" }}>
         <p style={{ fontWeight:600, fontSize:14, color:"var(--text2)", marginBottom:12 }}>ИСТОРИЯ</p>
         <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
@@ -1243,7 +1271,7 @@ function WeightPage({ weightHistory, setWeightHistory }) {
                 {e.date===todayKey && <Tag color="accent">Сегодня</Tag>}
               </div>
               <span style={{ fontWeight:700, fontSize:17 }}>{e.weight} кг</span>
-              <button onClick={()=>deleteEntry(e.id)} style={{ background:"none", border:"none", color:"var(--text3)", cursor:"pointer", marginLeft:10, display:"flex" }}><Icons.Trash/></button>
+              <button onClick={()=>deleteEntry(e.id)} style={{ background:"none", border:"none", color:"var(--text3)", cursor:"pointer", marginLeft:10, display:"flex", transition:"color 0.15s" }} onMouseEnter={e=>e.currentTarget.style.color="var(--red)"} onMouseLeave={e=>e.currentTarget.style.color="var(--text3)"}><Icons.Trash/></button>
             </div>
           ))}
           {sorted.length===0 && <div style={{ textAlign:"center", padding:40, color:"var(--text3)" }}>Нет записей</div>}
@@ -1254,6 +1282,48 @@ function WeightPage({ weightHistory, setWeightHistory }) {
 }
 
 // ─── СТРАНИЦА: НАСТРОЙКИ ──────────────────────────────────────────────────────
+
+function GoalCard({ icon, label, sublabel, value, onChange, placeholder, unit, color = "accent", min = 0 }) {
+  const colorMap = {
+    accent: { bg: "rgba(124,106,245,0.08)", border: "rgba(124,106,245,0.2)", icon: "rgba(124,106,245,0.15)", text: "var(--accent2)" },
+    green:  { bg: "rgba(16,185,129,0.06)",  border: "rgba(16,185,129,0.2)",  icon: "rgba(16,185,129,0.12)",  text: "var(--green)"  },
+    amber:  { bg: "rgba(245,158,11,0.06)",  border: "rgba(245,158,11,0.2)",  icon: "rgba(245,158,11,0.12)",  text: "var(--amber)"  },
+    blue:   { bg: "rgba(56,189,248,0.06)",  border: "rgba(56,189,248,0.2)",  icon: "rgba(56,189,248,0.12)",  text: "var(--blue)"   },
+  };
+  const c = colorMap[color] || colorMap.accent;
+  return (
+    <div className="goal-card" style={{ background: c.bg, borderRadius:14, padding:"14px 16px", border:`1px solid ${c.border}`, transition:"all 0.2s cubic-bezier(0.22,1,0.36,1)" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
+        <div style={{ width:36, height:36, borderRadius:10, background:c.icon, display:"flex", alignItems:"center", justifyContent:"center", color:c.text, flexShrink:0 }}>
+          {icon}
+        </div>
+        <div style={{ flex:1 }}>
+          <p style={{ fontWeight:600, fontSize:14, color:"var(--text)" }}>{label}</p>
+          {sublabel && <p style={{ fontSize:11, color:"var(--text3)", marginTop:1 }}>{sublabel}</p>}
+        </div>
+        {value > 0 && (
+          <div style={{ background: c.icon, borderRadius:8, padding:"3px 10px" }}>
+            <span style={{ fontSize:13, fontWeight:700, color:c.text, fontFamily:"var(--mono)" }}>{value}</span>
+            <span style={{ fontSize:10, color:c.text, opacity:0.7, marginLeft:3 }}>{unit}</span>
+          </div>
+        )}
+      </div>
+      <div style={{ position:"relative" }}>
+        <input
+          type="number"
+          value={value || ""}
+          onChange={onChange}
+          placeholder={placeholder}
+          min={min}
+          style={{ paddingRight: unit ? 40 : 14, background:"rgba(0,0,0,0.2)", borderColor: c.border }}
+        />
+        {unit && (
+          <span style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", fontSize:12, color:"var(--text3)", fontWeight:500, pointerEvents:"none" }}>{unit}</span>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nutrition, workouts, goals, setGoals, waterGoal, setWaterGoal }) {
   const [addModal, setAddModal] = useState(false);
@@ -1288,22 +1358,89 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nut
         <h1 style={{ fontSize:24, fontWeight:700 }}>Настройки</h1>
       </div>
 
+      {/* ── Цели по питанию — новый красивый UI ── */}
+      <div style={{ padding:"20px 20px 0" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+          <div style={{ width:32, height:32, borderRadius:10, background:"rgba(124,106,245,0.12)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--accent2)" }}>
+            <Icons.Target/>
+          </div>
+          <div>
+            <p style={{ fontWeight:700, fontSize:16 }}>Цели</p>
+            <p style={{ color:"var(--text3)", fontSize:12 }}>Питание и гидратация</p>
+          </div>
+        </div>
+
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          <GoalCard
+            icon={<Icons.Flame/>}
+            label="Калории"
+            sublabel="Суточная норма"
+            value={goals.calories}
+            onChange={e => setGoals(p => ({ ...p, calories: parseInt(e.target.value)||0 }))}
+            placeholder="2000"
+            unit="ккал"
+            color="accent"
+          />
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            <GoalCard
+              icon={<span style={{fontSize:16}}>🥩</span>}
+              label="Белки"
+              value={goals.protein}
+              onChange={e => setGoals(p => ({ ...p, protein: parseInt(e.target.value)||0 }))}
+              placeholder="150"
+              unit="г"
+              color="green"
+            />
+            <GoalCard
+              icon={<span style={{fontSize:16}}>🥑</span>}
+              label="Жиры"
+              value={goals.fat}
+              onChange={e => setGoals(p => ({ ...p, fat: parseInt(e.target.value)||0 }))}
+              placeholder="70"
+              unit="г"
+              color="amber"
+            />
+          </div>
+          <GoalCard
+            icon={<span style={{fontSize:16}}>🌾</span>}
+            label="Углеводы"
+            sublabel="Суточная норма"
+            value={goals.carbs}
+            onChange={e => setGoals(p => ({ ...p, carbs: parseInt(e.target.value)||0 }))}
+            placeholder="250"
+            unit="г"
+            color="blue"
+          />
+          {/* Вода */}
+          <GoalCard
+            icon={<Icons.Droplet/>}
+            label="Вода"
+            sublabel="Суточная норма"
+            value={waterGoal}
+            onChange={e => setWaterGoal(parseInt(e.target.value)||2500)}
+            placeholder="2500"
+            unit="мл"
+            color="blue"
+          />
+        </div>
+      </div>
+
       {/* Расписание */}
-      <div style={{ padding:"16px 20px 0" }}>
+      <div style={{ padding:"24px 20px 0" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
-          <p style={{ fontWeight:600, fontSize:15 }}>Ежедневное расписание</p>
+          <p style={{ fontWeight:700, fontSize:16 }}>Ежедневное расписание</p>
           <Btn small onClick={openAdd}><Icons.Plus/> Добавить</Btn>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
           {sorted.map(task => (
-            <div key={task.id} style={{ display:"flex", alignItems:"center", padding:"11px 14px", background:"var(--card)", borderRadius:10, border:"1px solid var(--border)" }}>
-              <span style={{ minWidth:44, fontSize:13, fontWeight:600, color:"var(--text3)" }}>{task.time}</span>
+            <div key={task.id} style={{ display:"flex", alignItems:"center", padding:"11px 14px", background:"var(--card)", borderRadius:10, border:"1px solid var(--border)", transition:"border-color 0.15s" }} onMouseEnter={e=>e.currentTarget.style.borderColor="var(--border2)"} onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
+              <span style={{ minWidth:44, fontSize:13, fontWeight:600, color:"var(--text3)", fontFamily:"var(--mono)" }}>{task.time}</span>
               <div style={{ flex:1, marginLeft:8 }}>
                 <span style={{ fontWeight:500, fontSize:14 }}>{task.title || (task.type==="meal" ? task.mealType : "Тренировка")}</span>
                 <div style={{ marginTop:2 }}><Tag color={typeColor[task.type]}>{typeLabel[task.type]}</Tag></div>
               </div>
               <div style={{ display:"flex", gap:6 }}>
-                <button onClick={()=>openEdit(task)} style={{ background:"var(--card2)", border:"none", borderRadius:6, padding:"5px 7px", color:"var(--text2)", cursor:"pointer", display:"flex" }}><Icons.Edit/></button>
+                <button onClick={()=>openEdit(task)} style={{ background:"var(--card2)", border:"none", borderRadius:6, padding:"5px 7px", color:"var(--text2)", cursor:"pointer", display:"flex", transition:"all 0.15s" }} onMouseEnter={e=>e.currentTarget.style.color="var(--text)"} onMouseLeave={e=>e.currentTarget.style.color="var(--text2)"}><Icons.Edit/></button>
                 <button onClick={()=>deleteTask(task.id)} style={{ background:"var(--red-bg)", border:"none", borderRadius:6, padding:"5px 7px", color:"var(--red)", cursor:"pointer", display:"flex" }}><Icons.Trash/></button>
               </div>
             </div>
@@ -1312,56 +1449,30 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nut
       </div>
 
       {/* Тема */}
-      <div style={{ padding:"20px 20px 0" }}>
-        <p style={{ fontWeight:600, fontSize:15, marginBottom:12 }}>Тема</p>
-        <div style={{ display:"flex", gap:8 }}>
+      <div style={{ padding:"24px 20px 0" }}>
+        <p style={{ fontWeight:700, fontSize:16, marginBottom:12 }}>Тема</p>
+        <div style={{ display:"flex", gap:0, background:"var(--card)", borderRadius:12, padding:4, border:"1px solid var(--border)" }}>
           {[["dark","🌙 Тёмная"],["light","☀️ Светлая"],["system","💻 Системная"]].map(([v,l]) => (
-            <button key={v} onClick={()=>setTheme(v)} style={{ flex:1, background:theme===v?"var(--accent)":"var(--card)", border:theme===v?"none":"1px solid var(--border)", borderRadius:10, padding:"10px 8px", color:theme===v?"#fff":"var(--text2)", fontWeight:600, fontSize:13, cursor:"pointer" }}>{l}</button>
+            <button key={v} className={`seg-btn ${theme===v?"active":""}`} onClick={()=>setTheme(v)} style={{ flex:1, background:theme===v?"linear-gradient(135deg, var(--accent), #9b8ff8)":"transparent", borderRadius:9, padding:"9px 6px", color:theme===v?"#fff":"var(--text2)", fontWeight:600, fontSize:12, cursor:"pointer", border:"none", transition:"all 0.22s cubic-bezier(0.22,1,0.36,1)", boxShadow: theme===v ? "0 2px 8px rgba(124,106,245,0.3)" : "none" }}>{l}</button>
           ))}
         </div>
       </div>
 
-      {/* Экспорт */}
-      <div style={{ padding:"20px 20px 0" }}>
-
-      {/* Цели по питанию */}
-      <div style={{ padding:"20px 20px 0" }}>
-        <p style={{ fontWeight:600, fontSize:15, marginBottom:12 }}>Цели по питанию</p>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {[
-            ["calories", "Калории (ккал/день)", "2000"],
-            ["protein",  "Белки (г/день)",      "150"],
-            ["fat",      "Жиры (г/день)",        "70"],
-            ["carbs",    "Углеводы (г/день)",    "250"],
-          ].map(([key, label, ph]) => (
-            <div key={key} style={{ background:"var(--card)", borderRadius:10, padding:"12px 14px", border:"1px solid var(--border)" }}>
-              <label style={{ fontSize:13, color:"var(--text2)", display:"block", marginBottom:6 }}>{label}</label>
-              <input
-                type="number"
-                value={goals[key] || ""}
-                onChange={e => setGoals(p => ({ ...p, [key]: parseInt(e.target.value)||0 }))}
-                placeholder={ph}
-                min="0"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-        <p style={{ fontWeight:600, fontSize:15, marginBottom:12 }}>Данные</p>
+      {/* Данные */}
+      <div style={{ padding:"24px 20px 0" }}>
+        <p style={{ fontWeight:700, fontSize:16, marginBottom:12 }}>Данные</p>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           <div style={{ background:"var(--card)", borderRadius:12, padding:"14px 16px", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div><p style={{ fontWeight:500 }}>Экспорт JSON</p><p style={{ color:"var(--text2)", fontSize:13 }}>Скачать резервную копию</p></div>
             <Btn variant="secondary" small onClick={exportData}>Скачать</Btn>
           </div>
-          <div style={{ background:"var(--red-bg)", borderRadius:12, padding:"14px 16px", border:"1px solid rgba(248,113,113,0.2)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ background:"var(--red-bg)", borderRadius:12, padding:"14px 16px", border:"1px solid rgba(244,63,94,0.2)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div><p style={{ fontWeight:500, color:"var(--red)" }}>Сбросить данные</p><p style={{ color:"var(--text2)", fontSize:13 }}>Удалить всё без возможности восстановления</p></div>
             <Btn variant="danger" small onClick={()=>setConfirmReset(true)}>Сброс</Btn>
           </div>
         </div>
       </div>
 
-      {/* Подтверждение сброса */}
       <Modal open={confirmReset} onClose={()=>setConfirmReset(false)} title="⚠️ Сброс данных">
         <p style={{ color:"var(--text2)", marginBottom:20 }}>Все данные будут удалены безвозвратно. Вы уверены?</p>
         <div style={{ display:"flex", gap:10 }}>
@@ -1370,7 +1481,6 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nut
         </div>
       </Modal>
 
-      {/* Добавить/редактировать задачу */}
       <Modal open={addModal} onClose={()=>setAddModal(false)} title={editTask?"Редактировать задачу":"Новая задача"}>
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
           <div>
@@ -1424,9 +1534,8 @@ export default function App() {
   const [completions, setCompletions] = useLocalStorage("fitness_completions", {});
   const [goals, setGoals] = useLocalStorage("fitness_goals", { calories: 2000, protein: 150, fat: 70, carbs: 250 });
   const [waterData, setWaterData] = useLocalStorage("fitness_water", {});
-  const waterGoal = 2500; // мл по умолчанию
+  const [waterGoal, setWaterGoal] = useLocalStorage("fitness_water_goal", 2500);
 
-  // Применяем тему
   useEffect(() => {
     const dark = theme==="dark" || (theme==="system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
     if (!dark) {
@@ -1471,14 +1580,18 @@ export default function App() {
             theme={theme} setTheme={setTheme}
             goals={goals} setGoals={setGoals}
             waterData={waterData} setWaterData={setWaterData}
-            waterGoal={waterGoal}
+            waterGoal={waterGoal} setWaterGoal={setWaterGoal}
           />
         </div>
         {/* Нижняя навигация */}
         <nav style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:480, background:"var(--bg2)", borderTop:"1px solid var(--border)", display:"flex", zIndex:100, paddingBottom:"env(safe-area-inset-bottom,0)" }}>
           {NAV.map(({ id, label, Icon }) => (
-            <button key={id} onClick={() => setTab(id)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:3, padding:"10px 4px 12px", background:"none", border:"none", color: tab===id ? "var(--accent2)" : "var(--text3)", cursor:"pointer", transition:"color 0.15s", position:"relative" }}>
-              {tab===id && <span style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:28, height:2, borderRadius:2, background:"var(--accent)" }}/>}
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:3, padding:"10px 4px 12px", background:"none", border:"none", color: tab===id ? "var(--accent2)" : "var(--text3)", cursor:"pointer", transition:"color 0.18s ease", position:"relative" }}
+            >
+              {tab===id && <span className="nav-active-dot"/>}
               <Icon/>
               <span style={{ fontSize:10, fontWeight: tab===id ? 600 : 400, lineHeight:1 }}>{label}</span>
             </button>
