@@ -1307,16 +1307,22 @@ function WeightPage({ weightHistory, setWeightHistory }) {
             textAlign: "center",
           }}
         >
-          <p
+          <div
             style={{
               color: "var(--text3)",
               fontSize: 11,
               fontWeight: 600,
               marginBottom: 4,
+              height: 28,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              lineHeight: 1.2,
             }}
           >
             ТЕКУЩИЙ
-          </p>
+          </div>
           <p style={{ fontWeight: 700, fontSize: 20 }}>
             {last?.weight ?? "—"}
           </p>
@@ -1332,16 +1338,22 @@ function WeightPage({ weightHistory, setWeightHistory }) {
             textAlign: "center",
           }}
         >
-          <p
+          <div
             style={{
               color: "var(--text3)",
               fontSize: 11,
               fontWeight: 600,
               marginBottom: 4,
+              height: 28,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              lineHeight: 1.2,
             }}
           >
             СРЕДНИЙ ЗА 7 ДНЕЙ
-          </p>
+          </div>
 
           <p style={{ fontWeight: 700, fontSize: 20 }}>
             {currentWeekAvg === null ? "—" : currentWeekAvg.toFixed(1)}
@@ -1359,16 +1371,22 @@ function WeightPage({ weightHistory, setWeightHistory }) {
             textAlign: "center",
           }}
         >
-          <p
+          <div
             style={{
               color: "var(--text3)",
               fontSize: 11,
               fontWeight: 600,
               marginBottom: 4,
+              height: 28,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              lineHeight: 1.2,
             }}
           >
             ИЗМЕНЕНИЕ
-          </p>
+          </div>
 
           <p
             style={{
