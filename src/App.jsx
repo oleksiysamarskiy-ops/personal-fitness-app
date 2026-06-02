@@ -487,31 +487,7 @@ function WaterWidget({ waterData, setWaterData, waterGoal }) {
       </div>
 
       {/* Стаканы-индикаторы */}
-      <div style={{ padding:"12px 16px", display:"flex", gap:5, justifyContent:"center", borderBottom:"1px solid var(--border)" }}>
-        {Array.from({length:totalCups}).map((_,i) => (
-          <div
-            key={i}
-            onClick={() => i >= cups ? addWater(250) : null}
-            style={{
-              flex:1, height:24, borderRadius:6,
-              background: i < cups ? "rgba(56,189,248,0.25)" : "var(--bg3)",
-              border: i < cups ? "1px solid rgba(56,189,248,0.3)" : "1px solid var(--border)",
-              cursor: i >= cups ? "pointer" : "default",
-              transition:"all 0.25s cubic-bezier(0.22,1,0.36,1)",
-              transform: lastAdded && i === cups - 1 ? "scale(1.15)" : "scale(1)",
-              boxShadow: i < cups ? "0 0 8px rgba(56,189,248,0.15)" : "none",
-              position:"relative", overflow:"hidden",
-            }}
-          >
-            {i < cups && (
-              <div style={{
-                position:"absolute", inset:0,
-                background:"linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%)",
-              }}/>
-            )}
-          </div>
-        ))}
-      </div>
+      
 
       {/* Кнопки быстрого добавления */}
       <div style={{ padding:"12px 16px", display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
