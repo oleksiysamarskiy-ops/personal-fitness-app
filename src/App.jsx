@@ -1381,7 +1381,7 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nut
             unit="ккал"
             color="accent"
           />
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+          
             <GoalCard
               icon={<span style={{fontSize:16}}>🥩</span>}
               label="Белки"
@@ -1391,6 +1391,7 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nut
               unit="г"
               color="green"
             />
+          
             <GoalCard
               icon={<span style={{fontSize:16}}>🥑</span>}
               label="Жиры"
@@ -1400,7 +1401,7 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nut
               unit="г"
               color="amber"
             />
-          </div>
+         
           <GoalCard
             icon={<span style={{fontSize:16}}>🌾</span>}
             label="Углеводы"
