@@ -1389,7 +1389,13 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nut
               type="time"
               value={form.time}
               onChange={e=>setForm(p=>({...p,time:e.target.value}))}
-              style={{ width:"100%", boxSizing:"border-box" }}
+              style={{
+                display: "block",
+                width: "100%",
+                minWidth: 0,
+                maxWidth: "100%",
+                boxSizing: "border-box"
+              }}
             />
           </div>
           <div>
