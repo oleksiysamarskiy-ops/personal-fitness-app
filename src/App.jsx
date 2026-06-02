@@ -1387,7 +1387,7 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nut
             <label style={{ fontSize:12, color:"var(--text2)", display:"block", marginBottom:6, fontWeight:600, textTransform:"uppercase" }}>Время</label>
             <div style={{ width:"100%", overflow:"hidden" }}>
               <input
-                type="time"
+                type="text"
                 value={form.time}
                 onChange={e=>setForm(p=>({...p,time:e.target.value}))}
                 style={{
