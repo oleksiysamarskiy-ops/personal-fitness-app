@@ -1709,11 +1709,12 @@ function GoalCard({ icon, label, sublabel, value, onChange, placeholder, unit, c
   );
 }
 
-function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nutrition, workouts, goals, setGoals, waterGoal, setWaterGoal }) {
+function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, setWeightHistory, nutrition, setNutrition, workouts, setWorkouts, goals, setGoals, waterGoal, setWaterGoal }) {
   const [addModal, setAddModal] = useState(false);
   const [editTask, setEditTask] = useState(null);
   const [form, setForm] = useState({ title:"", time:"08:00", type:"generic", mealType:"Завтрак", notes:"" });
   const [confirmReset, setConfirmReset] = useState(false);
+  const [importStatus, setImportStatus] = useState(null); // null | "ok" | "err"
 
   function openAdd() { setForm({ title:"", time:"08:00", type:"generic", mealType:"Завтрак", notes:"" }); setEditTask(null); setAddModal(true); }
   function openEdit(task) { setForm({...task}); setEditTask(task.id); setAddModal(true); }
@@ -1730,6 +1731,28 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nut
     const blob = new Blob([JSON.stringify(data,null,2)], { type:"application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href=url; a.download="fitness-backup.json"; a.click();
+  }
+
+  function importData(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.routine)       setRoutine(data.routine);
+        if (data.nutrition)     setNutrition(data.nutrition);
+        if (data.workouts)      setWorkouts(data.workouts);
+        if (data.weightHistory) setWeightHistory(data.weightHistory);
+        setImportStatus("ok");
+        setTimeout(() => setImportStatus(null), 3000);
+      } catch {
+        setImportStatus("err");
+        setTimeout(() => setImportStatus(null), 3000);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   }
 
   const sorted = [...routine].sort((a,b)=>a.time.localeCompare(b.time));
@@ -1850,6 +1873,21 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, nut
           <div style={{ background:"var(--card)", borderRadius:12, padding:"14px 16px", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div><p style={{ fontWeight:500 }}>Экспорт JSON</p><p style={{ color:"var(--text2)", fontSize:13 }}>Скачать резервную копию</p></div>
             <Btn variant="secondary" small onClick={exportData}>Скачать</Btn>
+          </div>
+          <div style={{ background:"var(--card)", borderRadius:12, padding:"14px 16px", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div>
+              <p style={{ fontWeight:500 }}>Импорт JSON</p>
+              <p style={{ color: importStatus==="ok" ? "var(--green)" : importStatus==="err" ? "var(--red)" : "var(--text2)", fontSize:13 }}>
+                {importStatus==="ok" ? "✓ Данные успешно загружены" : importStatus==="err" ? "✗ Ошибка: неверный файл" : "Восстановить из резервной копии"}
+              </p>
+            </div>
+            <label style={{ display:"inline-flex", alignItems:"center", gap:6, background:"var(--card2)", border:"1px solid var(--border2)", borderRadius:10, padding:"8px 14px", fontSize:13, fontWeight:600, color:"var(--text2)", cursor:"pointer", transition:"all 0.18s", fontFamily:"var(--font)" }}
+              onMouseEnter={e=>{ e.currentTarget.style.background="var(--bg3)"; e.currentTarget.style.color="var(--text)"; }}
+              onMouseLeave={e=>{ e.currentTarget.style.background="var(--card2)"; e.currentTarget.style.color="var(--text2)"; }}
+            >
+              Загрузить
+              <input type="file" accept=".json,application/json" onChange={importData} style={{ display:"none" }}/>
+            </label>
           </div>
           <div style={{ background:"var(--red-bg)", borderRadius:12, padding:"14px 16px", border:"1px solid rgba(244,63,94,0.2)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div><p style={{ fontWeight:500, color:"var(--red)" }}>Сбросить данные</p><p style={{ color:"var(--text2)", fontSize:13 }}>Удалить всё без возможности восстановления</p></div>
