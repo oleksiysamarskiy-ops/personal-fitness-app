@@ -1709,7 +1709,7 @@ function GoalCard({ icon, label, sublabel, value, onChange, placeholder, unit, c
   );
 }
 
-function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, setWeightHistory, nutrition, setNutrition, workouts, setWorkouts, goals, setGoals, waterGoal, setWaterGoal }) {
+function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, setWeightHistory, nutrition, setNutrition, workouts, setWorkouts, goals, setGoals, waterGoal, setWaterGoal, waterData, setWaterData, completions, setCompletions }) {
   const [addModal, setAddModal] = useState(false);
   const [editTask, setEditTask] = useState(null);
   const [form, setForm] = useState({ title:"", time:"08:00", type:"generic", mealType:"Завтрак", notes:"" });
@@ -1727,7 +1727,18 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, set
   function deleteTask(id) { setRoutine(p=>p.filter(t=>t.id!==id)); }
 
   function exportData() {
-    const data = { weightHistory, nutrition, workouts, routine, exportedAt: new Date().toISOString() };
+    const data = {
+      routine,
+      nutrition,
+      workouts,
+      weightHistory,
+      goals,
+      waterGoal,
+      waterData,
+      completions,
+      theme,
+      exportedAt: new Date().toISOString(),
+    };
     const blob = new Blob([JSON.stringify(data,null,2)], { type:"application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href=url; a.download="fitness-backup.json"; a.click();
@@ -1744,6 +1755,11 @@ function SettingsPage({ routine, setRoutine, theme, setTheme, weightHistory, set
         if (data.nutrition)     setNutrition(data.nutrition);
         if (data.workouts)      setWorkouts(data.workouts);
         if (data.weightHistory) setWeightHistory(data.weightHistory);
+        if (data.goals)         setGoals(data.goals);
+        if (data.waterGoal !== undefined) setWaterGoal(data.waterGoal);
+        if (data.waterData)     setWaterData(data.waterData);
+        if (data.completions)   setCompletions(data.completions);
+        if (data.theme)         setTheme(data.theme);
         setImportStatus("ok");
         setTimeout(() => setImportStatus(null), 3000);
       } catch {
